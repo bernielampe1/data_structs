@@ -3,7 +3,12 @@ SUMMARY:
 
 TODO:
   Add Union-Find,
-  Add Hash map,
-  Add Ordered and unordered maps,
-  Add Heaps,
-  Add Red-black and AVL trees
+  Hash map,
+  Ordered and unordered maps,
+  Heaps,
+  Red-black and AVL trees
+  Trie,
+  Skip lists,
+  Directed acyclic graphs,
+  
+  Add traversals for all  
