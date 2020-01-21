@@ -10,5 +10,7 @@ TODO:
   Trie,
   Skip lists,
   Directed acyclic graphs,
+  Dense Matrix,
+  Sparse Matrix
   
   Add traversals for all  
