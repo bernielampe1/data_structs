@@ -6,3 +6,4 @@ TODO:
   Add Hash map,
   Add Ordered and unordered maps,
   Add Heaps,
+  Add Red-black and AVL trees
