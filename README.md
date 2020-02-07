@@ -1,11 +1,10 @@
 SUMMARY:
-  This repository is a collection of data structures authored in C++. It is a review of the most common data structs covered in any C++ course.
+  This repository is a collection of data structures authored in C++. It is a personal review of basic to advanced data structures just for fun. They are free to use and modify.
 
 TODO:
-  Add Union-Find,
+  Union-Find,
   Hash map,
   Ordered and unordered maps,
-  Heaps,
   Red-black and AVL trees
   Trie,
   Skip lists,

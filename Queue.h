@@ -67,7 +67,7 @@ namespace bhl
 
         _front = _back = 0;
         _n = 0;
-			}
+      }
 
       void push(const T& d)
       {
