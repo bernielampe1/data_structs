@@ -172,8 +172,6 @@ public:
       }
       ptr = ptr->_next;
     }
-
-    return T();
   }
 
   const T &find(const K &k) const {
