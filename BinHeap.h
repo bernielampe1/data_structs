@@ -1,9 +1,12 @@
 #ifndef _BHL_BINHEAP_H_
 #define _BHL_BINHEAP_H_
 
+#include<ostream>
+#include "utils.h"
+
 #define MINHEAP 0
 #define MAXHEAP 1
-#define HEAPTYPE MINHEAP
+#define HEAPTYPE MAXHEAP
 
 #if HEAPTYPE == MINHEAP
 #define CMPDIR <
@@ -12,7 +15,12 @@
 #endif
 
 namespace bhl {
+template <typename T> class BinHeap;
+template <typename T>
+std::ostream &operator<<(std::ostream &, const BinHeap<T> &);
+
 template <typename T> class BinHeap {
+
 private:
   T *_data;
   unsigned _n;
@@ -80,7 +88,7 @@ public:
 
   unsigned capacity() const { return (_n); }
 
-  bool empty() { return (_last == 0); }
+  bool empty() const { return (_last == 0); }
 
   void clear() { _last = 0; }
 
@@ -93,7 +101,7 @@ public:
 
     _data[_last++] = elem;
 
-    while (i > 0 && _data[_parent(i)] CMPDIR _data[i]) {
+    while (i > 0 && _data[i] CMPDIR _data[_parent(i)] ) {
       _swap(&_data[_parent(i)], &_data[i]);
       i = _parent(i);
     }
@@ -117,16 +125,42 @@ public:
   T extractroot() {
     T root;
 
-    if (!empty()) {
-      root = _data[0];
-      _data[0] = _data[_parent(_last)];
-      _last--;
-      _heapify(0);
+    if (empty()) {
+        return T();
     }
+
+    if (size() == 1) {
+        _last--;
+        return _data[0];
+    }
+
+    root = _data[0];
+    _data[0] = _data[--_last];
+    _heapify(0);
 
     return root;
   }
+
+  friend std::ostream &operator<<<>(std::ostream &os, const BinHeap<T> &rhs);
 };
+
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const BinHeap<T> &rhs) {
+  unsigned levels = floor_log2(rhs.size()) + 1;
+  unsigned i = 0;
+
+  if (!rhs.empty()) {
+    for(int l = 0; l < levels; l++) {
+      for(int j = 0; j < (1 << l); j++) {
+          if (i < rhs.size()) os << rhs._data[i++] << " ";
+          else break;
+      }
+      os << std::endl;
+    }
+  }
+
+  return (os);
+}
 } // namespace bhl
 
 #endif // _BHL_BINHEAP_H_

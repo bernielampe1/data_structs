@@ -1,6 +1,8 @@
 #ifndef _BHL_MSORT_H_
 #define _BHL_MSORT_H_
 
+#include "Array.h"
+
 namespace bhl {
 template <typename T>
 void merge(Array<T> &a, Array<T> &tmp, int l, int m, int r) {

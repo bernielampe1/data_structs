@@ -8,13 +8,9 @@ struct obj {
   obj() : _n(-1) {}
   obj(const int n) : _n(n) {}
   bool operator<(struct obj &rhs) { return _n < rhs._n; }
-  struct obj &operator=(const struct obj &rhs) {
-    if (&rhs != this) {
-      _n = rhs._n;
-    }
-
-    return *this;
-  }
+  bool operator>(struct obj &rhs) { return _n > rhs._n; }
+  bool operator==(struct obj &rhs) { return _n == rhs._n; }
+  bool operator!=(struct obj &rhs) { return _n != rhs._n; }
 
   int _n;
 };
@@ -25,16 +21,18 @@ ostream &operator<<(ostream &os, const obj &o) {
 }
 
 int main() {
-  BinHeap<obj> bh(200);
+  BinHeap<obj> bh(100);
 
   for (int i = 0; i < 100; i++) {
-    bh.insert(obj(i - 50));
+    bh.insert(obj(i));
   }
+
+  cout << bh << std::endl;
 
   for (int i = 0; i < 100; i++) {
     cout << bh.extractroot() << ',';
   }
-  cout << endl;
+
 
   return (0);
 }

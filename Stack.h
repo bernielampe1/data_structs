@@ -1,6 +1,8 @@
 #ifndef _BHL_STACK_H_
 #define _BHL_STACK_H_
 
+#include<ostream>
+
 namespace bhl {
 template <typename T> class Stack;
 template <typename T>

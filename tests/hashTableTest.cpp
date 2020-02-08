@@ -4,7 +4,7 @@
 using namespace std;
 using namespace bhl;
 
-int hash(const string &s) {
+int hashFunc(const string &s) {
   unsigned long v = 5381;
   for (unsigned i = 0; i < s.size(); i++)
     v = ((v << 5) + v) + s[i];
@@ -12,7 +12,7 @@ int hash(const string &s) {
 }
 
 int main() {
-  HashTable<string, float> h(100, hash);
+  HashTable<string, float> h(100, hashFunc);
 
   h.insert("jan", 1);
   h.insert("feb", 2);

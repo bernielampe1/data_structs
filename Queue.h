@@ -1,6 +1,8 @@
 #ifndef _BHL_QUEUE_H_
 #define _BHL_QUEUE_H_
 
+#include<ostream>
+
 namespace bhl {
 template <typename T> class Queue;
 template <typename T>

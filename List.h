@@ -1,6 +1,8 @@
 #ifndef _BHL_LIST_H_
 #define _BHL_LIST_H_
 
+#include<ostream>
+
 namespace bhl {
 template <typename T> class List {
   struct Node {

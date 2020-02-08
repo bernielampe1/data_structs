@@ -1,6 +1,8 @@
 #ifndef _BHL_ARRAY_H_
 #define _BHL_ARRAY_H_
 
+#include<ostream>
+
 namespace bhl {
 template <typename T> class Array {
 private:
