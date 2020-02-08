@@ -1,25 +1,22 @@
-#include<iostream>
-#include"Array.h"
+#include "Array.h"
+#include <iostream>
 
 using namespace std;
 using namespace bhl;
 
-struct obj
-{
-    obj(): _n(0) { }
-    obj(const int n): _n(n) { }
+struct obj {
+  obj() : _n(0) {}
+  obj(const int n) : _n(n) {}
 
-    int _n;
+  int _n;
 };
 
-ostream& operator<<(ostream &os, const obj &o)
-{
+ostream &operator<<(ostream &os, const obj &o) {
   os << o._n;
-  return(os);
+  return (os);
 }
 
-int main()
-{
+int main() {
   Array<obj> a0;
   Array<obj> a1(a0);
   Array<obj> a2(100);
@@ -54,8 +51,9 @@ int main()
   a0.resize(99);
   cout << "resize of a0 = " << a0.size() << endl;
 
-
-  for(int i = 0; i < 99; i++) { a0[i] = i; }
+  for (int i = 0; i < 99; i++) {
+    a0[i] = i;
+  }
 
   cout << "a0 contains: " << a0 << endl;
 
@@ -67,6 +65,5 @@ int main()
   cout << "resize of a0 = " << a0.size() << endl;
   cout << "a0 contains: " << a0 << endl;
 
-  return(0);
+  return (0);
 }
-

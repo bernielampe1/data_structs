@@ -1,15 +1,16 @@
 SUMMARY:
-  This repository is a collection of data structures authored in C++. It is a personal review of basic to advanced data structures just for fun. They are free to use and modify.
+  This repository is a collection of data structures authored in C++. It is a personal review of basic to advanced data structures just for fun.
+  They are free to use and modify.
 
 TODO:
-  Union-Find,
-  Hash map,
-  Ordered and unordered maps,
-  Red-black and AVL trees
+  Set,
   Trie,
-  Skip lists,
-  Directed acyclic graphs,
+  Skip Lists,
+  Union-Find,
+  Ordered Map,
   Dense Matrix,
   Sparse Matrix,
-  Sets,
-  2D and 3D Images
+  Unordered Map,
+  Red-black Tree,
+  N-dimensional Array,
+  Directed Acyclic Graph

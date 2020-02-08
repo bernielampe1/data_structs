@@ -1,25 +1,22 @@
-#include<iostream>
-#include"List.h"
+#include "List.h"
+#include <iostream>
 
 using namespace std;
 using namespace bhl;
 
-struct obj
-{
-    obj(): _n(0) { }
-    obj(const int n): _n(n) { }
+struct obj {
+  obj() : _n(0) {}
+  obj(const int n) : _n(n) {}
 
-    int _n;
+  int _n;
 };
 
-ostream& operator<<(ostream &os, const obj &o)
-{
+ostream &operator<<(ostream &os, const obj &o) {
   os << o._n;
-  return(os);
+  return (os);
 }
 
-int main()
-{
+int main() {
   List<obj> a0;
   List<obj> a1(a0);
   List<obj> a2(100);
@@ -54,33 +51,38 @@ int main()
   a0.resize(99);
   cout << "resize of a0 = " << a0.size() << endl;
 
-
-  for(int i = 0; i < 99; i++) { a0.push_back(i); }
+  for (int i = 0; i < 99; i++) {
+    a0.push_back(i);
+  }
 
   cout << "a0 contains: " << a0 << endl;
 
   a0.clear();
 
   cout << "a0 contains: " << a0 << endl;
-  
+
   a0.resize(50);
   cout << "resize of a0 = " << a0.size() << endl;
   cout << "a0 contains: " << a0 << endl;
 
-
-  for(int i = 0; i < 25; i++) { a0.pop_back(); }
+  for (int i = 0; i < 25; i++) {
+    a0.pop_back();
+  }
   cout << "pop_back of a0 = " << a0.size() << endl;
 
   a0.push_back(10000);
   cout << "a0 on back is = " << a0.back() << endl;
   cout << "push_back of a0 = " << a0.size() << endl;
 
-  for(int i = 0; i < 25; i++) { a0.push_front(i); }
+  for (int i = 0; i < 25; i++) {
+    a0.push_front(i);
+  }
   cout << "push_front of a0 contains: " << a0 << endl;
   cout << "push_front of a0 = " << a0.size() << endl;
-  
-  
-  for(int i = 0; i < 25; i++) { a0.pop_front(); }
+
+  for (int i = 0; i < 25; i++) {
+    a0.pop_front();
+  }
   cout << "pop_front of a0 contains: " << a0 << endl;
   cout << "pop_front of a0 = " << a0.size() << endl;
 
@@ -90,7 +92,8 @@ int main()
 
   List<obj>::iterator it = a0.begin();
 
-  for(int i = 0; i < 15; i++) it++;
+  for (int i = 0; i < 15; i++)
+    it++;
   a0.insert(it, 5555);
   cout << "insert of a0 contains: " << a0 << endl;
   cout << "insert of a0 = " << a0.size() << endl;
@@ -99,6 +102,5 @@ int main()
   cout << "erase of a0 contains: " << a0 << endl;
   cout << "erase of a0 = " << a0.size() << endl;
 
-  return(0);
+  return (0);
 }
-

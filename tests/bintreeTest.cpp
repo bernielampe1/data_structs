@@ -1,11 +1,10 @@
-#include<iostream>
-#include"BinTree.h"
+#include "BinTree.h"
+#include <iostream>
 
 using namespace std;
 using namespace bhl;
 
-int main()
-{
+int main() {
   BinTree<int> b;
 
   b.insert(10);
@@ -19,5 +18,5 @@ int main()
   cout << b.exists(11) << endl;
   cout << b.exists(1) << endl;
 
-  return(0);
+  return (0);
 }

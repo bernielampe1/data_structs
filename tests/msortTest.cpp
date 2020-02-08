@@ -1,27 +1,28 @@
-#include<iostream>
-#include<stdlib.h>
-#include"Array.h"
-#include"msort.h"
+#include "msort.h"
+#include "Array.h"
+#include <iostream>
+#include <stdlib.h>
 
 using namespace std;
 using namespace bhl;
 
-int main()
-{
+int main() {
   Array<float> a(100);
-  for(int i = 0; i < 100; ++i)
-  {
+  for (int i = 0; i < 100; ++i) {
     a[i] = float(rand()) / float(rand());
   }
 
-cout << "*********************************************************************"<< endl;
-cout << "DATA = " << a << endl << endl;
+  cout
+      << "*********************************************************************"
+      << endl;
+  cout << "DATA = " << a << endl << endl;
 
-msort(a, 0, a.size() - 1);
+  msort(a, 0, a.size() - 1);
 
-cout << "*********************************************************************"<< endl;
-cout << "DATA = " << a << endl << endl;
+  cout
+      << "*********************************************************************"
+      << endl;
+  cout << "DATA = " << a << endl << endl;
 
-  return(0);
+  return (0);
 }
-
