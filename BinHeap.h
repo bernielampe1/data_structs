@@ -25,7 +25,7 @@ private:
   unsigned _right(unsigned i) { return (2 * i + 2); }
 
   void _swap(T *x, T *y) {
-    T temp;
+    T temp = *x;
     *x = *y;
     *y = temp;
   }
