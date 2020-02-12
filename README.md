@@ -1,7 +1,7 @@
 SUMMARY:
   This repository is a collection of data structures authored in C++. It is a personal review of basic to advanced data structures just for fun.
-  They are free to use and modify.
 
+TODO:  
   Trie,
   Skip Lists,
   Ordered Map,
@@ -11,6 +11,5 @@ SUMMARY:
   N-dimensional Array,
   Undirected Graph,
   Directed Acyclic Graph,
-  Set (could use a BST or RB-tree)
+  Set,
   BitVector
-  Butterfly FFT an array of floats and doubles
