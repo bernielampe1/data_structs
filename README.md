@@ -5,7 +5,6 @@ TODO:
   Trie,
   Skip Lists,
   Ordered Map,
-  Dense Matrix,
   Sparse Matrix,
   Red-black Tree,
   N-dimensional Array,
