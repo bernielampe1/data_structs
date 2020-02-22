@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 using namespace std;
-using namespace bhl;
 
 int main() {
   Array<float> a(100);

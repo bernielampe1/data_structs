@@ -2,7 +2,6 @@
 #include <iostream>
 
 using namespace std;
-using namespace bhl;
 
 int main() {
   BinTree<int> b;

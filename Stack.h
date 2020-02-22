@@ -3,7 +3,6 @@
 
 #include<ostream>
 
-namespace bhl {
 template <typename T> class Stack;
 template <typename T>
 std::ostream &operator<<(std::ostream &, const Stack<T> &);
@@ -98,6 +97,5 @@ std::ostream &operator<<(std::ostream &os, const Stack<T> &rhs) {
 
   return (os);
 }
-} // namespace bhl
 
 #endif // _BHL_STACK_H_

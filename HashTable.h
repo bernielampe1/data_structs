@@ -1,7 +1,6 @@
 #ifndef _BHL_HASHTABLE_H_
 #define _BHL_HASHTABLE_H_
 
-namespace bhl {
 template <typename K, typename T> class HashTable {
   struct Node {
     Node(const K &k, const T &d) : _key(k), _data(d), _next(0) {}
@@ -194,6 +193,5 @@ public:
 
   const T &operator[](const K &k) const { return (find(k)); }
 };
-} // namespace bhl
 
 #endif // _BHL_HASHTABLE_H_

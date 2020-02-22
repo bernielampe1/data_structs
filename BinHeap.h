@@ -14,8 +14,8 @@
 #define CMPDIR >
 #endif
 
-namespace bhl {
 template <typename T> class BinHeap;
+
 template <typename T>
 std::ostream &operator<<(std::ostream &, const BinHeap<T> &);
 
@@ -161,6 +161,5 @@ std::ostream &operator<<(std::ostream &os, const BinHeap<T> &rhs) {
 
   return (os);
 }
-} // namespace bhl
 
 #endif // _BHL_BINHEAP_H_

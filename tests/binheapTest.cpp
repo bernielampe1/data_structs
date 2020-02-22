@@ -2,7 +2,6 @@
 #include <iostream>
 
 using namespace std;
-using namespace bhl;
 
 struct obj {
   obj() : _n(-1) {}

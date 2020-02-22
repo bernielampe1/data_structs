@@ -3,7 +3,6 @@
 
 #include<ostream>
 
-namespace bhl {
 template <typename T> class List {
   struct Node {
     Node(Node *n, Node *p) : _next(n), _prev(p) {}
@@ -272,6 +271,5 @@ std::ostream &operator<<(std::ostream &os, const List<T> &rhs) {
 
   return (os);
 }
-} // namespace bhl
 
 #endif // _BHL_LIST_H_

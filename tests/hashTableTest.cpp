@@ -2,7 +2,6 @@
 #include <iostream>
 
 using namespace std;
-using namespace bhl;
 
 int hashFunc(const string &s) {
   unsigned long v = 5381;

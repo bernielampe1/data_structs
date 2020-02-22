@@ -3,7 +3,6 @@
 
 #include<ostream>
 
-namespace bhl {
 template <typename T> class Array {
 private:
   T *_data;
@@ -172,6 +171,5 @@ std::ostream &operator<<(std::ostream &os, const Array<T> &rhs) {
 
   return (os);
 }
-} // namespace bhl
 
 #endif // _BHL_ARRAY_H_

@@ -3,7 +3,6 @@
 
 #include<ostream>
 
-namespace bhl {
 template <typename T> class Queue;
 template <typename T>
 std::ostream &operator<<(std::ostream &, const Queue<T> &);
@@ -114,6 +113,5 @@ std::ostream &operator<<(std::ostream &os, const Queue<T> &rhs) {
 
   return (os);
 }
-} // namespace bhl
 
 #endif // _BHL_QUEUE_H_

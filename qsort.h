@@ -3,7 +3,6 @@
 
 #include "Array.h"
 
-namespace bhl {
 template <typename T> void swap(T &a0, T &a1) {
   T t = a0;
   a0 = a1;
@@ -35,6 +34,5 @@ template <typename T> void qsort(Array<T> &a, int l, int r) {
     qsort(a, p + 1, r);
   }
 }
-} // namespace bhl
 
 #endif // _BHL_QSORT_H_

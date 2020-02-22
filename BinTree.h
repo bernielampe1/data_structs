@@ -1,7 +1,6 @@
 #ifndef _BHL_BINTREE_H_
 #define _BHL_BINTREE_H_
 
-namespace bhl {
 template <typename T> class BinTree {
 private:
   struct Node {
@@ -93,6 +92,5 @@ public:
 
   unsigned size() const { return (_size); }
 };
-} // namespace bhl
 
 #endif // _BHL_BINTREE_H_

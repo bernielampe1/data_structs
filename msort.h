@@ -3,7 +3,6 @@
 
 #include "Array.h"
 
-namespace bhl {
 template <typename T>
 void merge(Array<T> &a, Array<T> &tmp, int l, int m, int r) {
   int i = l;
@@ -41,6 +40,5 @@ template <typename T> void msort(Array<T> &a, int l, int r) {
   Array<T> tmp(r - l + 1);
   recsort(a, tmp, l, r);
 }
-} // namespace bhl
 
 #endif // _BHL_MSORT_H_

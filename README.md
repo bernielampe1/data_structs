@@ -5,7 +5,6 @@ TODO:
   Trie,   
   Skip Lists,  
   Sparse Matrix,  
-  Red-black Tree,  
   N-dimensional Array,  
   Undirected Graph,  
   Directed Acyclic Graph  
