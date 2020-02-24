@@ -9,3 +9,9 @@ TODO:
   Undirected Graph,  
   Directed Acyclic Graph  
 
+Implement the rule of zero
+Destructors are virtual unless class if final
+Move constructor is missing
+Smart Ptrs
+Std lib for resource allocation
+
