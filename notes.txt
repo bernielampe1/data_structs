@@ -1,6 +1,21 @@
-Change to pragma once
-Add iterators to all 
-Add rule of 5 to all
-Make destructors virtual
-Create rule of zero implementations
-Make sure all tests pass
+TODO: 
+  Change to pragma once
+  Add iterators to all 
+  Add rule of 5 to all
+  Make destructors virtual
+  Create rule-of-five-default implementations
+  Make sure all tests pass
+  clang-format all
+
+NOTE: 
+  Rule-of-five-default:
+    If you define, =default or =delete any of dtor, copy ctor, assignment op, move ctor, move assignment op then you must define, =default or =delete them all.
+
+  Rule-of-zero:
+    Use value semantics of stl and smart pointers to ensure you don't have to define any of the copy ctor, move ctor, assignment op, move assignment op, or dtor.
+
+  Rule-of-five:
+    If you define any of the copy ctor, move ctor, assignment op, move assignment op, or dtor, you must to all five.
+
+  Rule-of-three:
+    If you define any of the copy ctor, assignment op, or dtor, you must to all three.

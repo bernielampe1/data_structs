@@ -1,6 +1,10 @@
 #pragma once
 
+// 02-26-2020
 // Rule-of-five implementation of template Array.
+
+// 01-01-2012
+// Rule-of-three implementation of template Array.
 
 template <typename T> class Array {
 private:
@@ -98,11 +102,13 @@ public:
   Array(const unsigned n) : _data(new T[n]), _n(n) {}
 
   Array(const T &o, const unsigned n) : _data(new T[n]), _n(n) {
-    for (unsigned i = 0; i < _n; i++) _data[i] = o;
+    for (unsigned i = 0; i < _n; i++)
+      _data[i] = o;
   }
 
   Array(const Array &o) : _data(new T[o._n]), _n(o._n) {
-    for (unsigned i = 0; i < _n; i++) _data[i] = o._data[i];
+    for (unsigned i = 0; i < _n; i++)
+      _data[i] = o._data[i];
   }
 
   Array(Array &&o) : _data(o._data), _n(o._n) {
@@ -121,7 +127,8 @@ public:
         _n = o._n;
       }
 
-      for (unsigned i = 0; i < _n; i++) _data[i] = o._data[i];
+      for (unsigned i = 0; i < _n; i++)
+        _data[i] = o._data[i];
     }
 
     return *this;
@@ -129,7 +136,8 @@ public:
 
   Array &operator=(Array &&o) {
     if (this != &o) {
-      if (_n) delete [] _data;
+      if (_n)
+        delete[] _data;
 
       _data = o._data;
       o._data = 0;
@@ -146,13 +154,15 @@ public:
   T &operator[](const unsigned i) { return (_data[i]); }
 
   void resize(const unsigned n) {
-    if (n != _n)  {
+    if (n != _n) {
       T *_tmpData = new T[n];
 
       unsigned m = n < _n ? n : _n;
-      for (unsigned i = 0; i < m; i++) _tmpData[i] = _data[i];
+      for (unsigned i = 0; i < m; i++)
+        _tmpData[i] = _data[i];
 
-      if (_data) delete[] _data;
+      if (_data)
+        delete[] _data;
       _data = _tmpData;
       _n = n;
     }
@@ -173,11 +183,10 @@ public:
   const_iterator end() const { return (const_iterator(this, _n)); }
 };
 
-#include<ostream>
+#include <ostream>
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const Array<T> &o) {
-  for (typename Array<T>::const_iterator it = o.begin(); it != o.end();
-       it++) {
+  for (typename Array<T>::const_iterator it = o.begin(); it != o.end(); it++) {
     os << *it << ", ";
   }
 

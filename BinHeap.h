@@ -1,7 +1,5 @@
-#ifndef _BHL_BINHEAP_H_
-#define _BHL_BINHEAP_H_
+#pragma once
 
-#include<ostream>
 #include "utils.h"
 
 #define MINHEAP 0
@@ -144,6 +142,7 @@ public:
   friend std::ostream &operator<<<>(std::ostream &os, const BinHeap<T> &rhs);
 };
 
+#include<ostream>
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const BinHeap<T> &rhs) {
   unsigned levels = floor_log2(rhs.size()) + 1;
@@ -161,5 +160,3 @@ std::ostream &operator<<(std::ostream &os, const BinHeap<T> &rhs) {
 
   return (os);
 }
-
-#endif // _BHL_BINHEAP_H_

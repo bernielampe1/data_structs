@@ -1,8 +1,6 @@
-#ifndef __VEC_H__
-#define __VEC_H__
+#pragma once
 
 #include <cstdlib>
-#include <ostream>
 #include "types.h"
 
 /* Abstraction of a 2-D vector float */
@@ -142,6 +140,7 @@ public:
   Vec<T> &operator/=(const Vec<T> &m);
 };
 
+#include <ostream>
 template<typename T>
 std::ostream &operator<<(std::ostream &os, const Vec<T> &v) {
     for(u32 i = 0; i < v.len(); i++) os << v[i] << ",";
@@ -150,4 +149,3 @@ std::ostream &operator<<(std::ostream &os, const Vec<T> &v) {
 
 #include "Vec.inl"
 
-#endif // __VEC_H__
