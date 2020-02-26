@@ -1,0 +1,6 @@
+Change to pragma once
+Add iterators to all 
+Add rule of 5 to all
+Make destructors virtual
+Create rule of zero implementations
+Make sure all tests pass
