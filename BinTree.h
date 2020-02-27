@@ -1,5 +1,4 @@
-#ifndef _BHL_BINTREE_H_
-#define _BHL_BINTREE_H_
+#pragma once
 
 template <typename T> class BinTree {
 private:
@@ -72,8 +71,34 @@ private:
     *n = 0;
   }
 
+  void _copynode(Node **dest, Node **src) {
+    if (*src) {
+      if (*dest != 0) {
+        (*dest)->_data = (*src)->_data; // copy data over
+      }
+      else {
+        *dest = new Node((*src)->_data);
+      }
+
+      if ((*src)->_left != 0) _copynode(&(*dest)->_left, &(*src)->_left);
+      if ((*src)->_right != 0) _copynode(&(*dest)->_right, &(*src)->_right);
+    }
+  }
+
 public:
   BinTree() : _root(0), _size(0) {}
+
+  BinTree(const BinTree &o): _root(0), _size(o._size) {
+    _copynode(&this->_root, &o._root);
+  }
+
+  BinTree& operator=(BinTree &o) {
+    if (this != &o) {
+        _copynode(&this->_root, &o._root);
+        this->_size = o._size;
+    }
+    return *this;
+  }
 
   ~BinTree() { clear(); }
 
@@ -93,4 +118,14 @@ public:
   unsigned size() const { return (_size); }
 };
 
-#endif // _BHL_BINTREE_H_
+#include<iostream>
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const BinTree<T> &o) {
+/*
+  for (typename BinTree<T>::const_iterator it = o.begin(); it != o.end(); it++) {
+    os << *it << ", ";
+  }
+*/
+
+  return (os);
+}
