@@ -1,5 +1,4 @@
-#ifndef __PAIR_H__
-#define __PAIR_H__
+#pragma once
 
 template<typename S, typename T>
 class Pair
@@ -26,5 +25,3 @@ class Pair
         return (this->_first != p._first || this->_second != p._second);
     }
 };
-
-#endif // __PAIR_H__

@@ -1,5 +1,4 @@
-#ifndef _BHL_LIST_H_
-#define _BHL_LIST_H_
+#pragma once
 
 #include<ostream>
 
@@ -271,5 +270,3 @@ std::ostream &operator<<(std::ostream &os, const List<T> &rhs) {
 
   return (os);
 }
-
-#endif // _BHL_LIST_H_

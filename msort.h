@@ -1,5 +1,4 @@
-#ifndef _BHL_MSORT_H_
-#define _BHL_MSORT_H_
+#pragma once
 
 #include "Array.h"
 
@@ -40,5 +39,3 @@ template <typename T> void msort(Array<T> &a, int l, int r) {
   Array<T> tmp(r - l + 1);
   recsort(a, tmp, l, r);
 }
-
-#endif // _BHL_MSORT_H_

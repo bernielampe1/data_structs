@@ -1,5 +1,4 @@
-#ifndef _EXCEPTION_H_
-#define _EXCEPTION_H_
+#pragma once
 
 #include <exception>
 #include <iostream>
@@ -18,5 +17,3 @@ public:
 
   virtual const char *what() const throw() { return (mes.c_str()); }
 };
-
-#endif // _EXCEPTION_H_

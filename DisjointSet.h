@@ -1,5 +1,4 @@
-#ifndef _DISJOINTSET_H_
-#define _DISJOINTSET_H_
+#pragma once
 
 #include<unordered_map>
 
@@ -84,6 +83,3 @@ template< typename T > T DisjointSet<T>::find(const T &x)
     return(it->second.parent);
   }
 }
-
-#endif // _DISJOINT_H_
-

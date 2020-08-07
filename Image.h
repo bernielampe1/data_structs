@@ -1,5 +1,4 @@
-#ifndef __IMAGE_H__
-#define __IMAGE_H__
+#pragma once
 
 #include <fstream>
 #include <string>
@@ -104,5 +103,3 @@ public:
 };
 
 #include "Image.inl"
-
-#endif // __IMAGE_H__

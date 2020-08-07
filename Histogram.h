@@ -1,5 +1,4 @@
-#ifndef _HISTOGRAM_H_
-#define _HISTOGRAM_H_
+#pragma once
 
 #include<algorithm>
 #include<map>
@@ -93,6 +92,3 @@ template<typename T> class Histogram
 
 template< typename T >
 ostream& operator<<(ostream &os, const Histogram<T> &h) { return(h.print(os)); }
-
-#endif // _HISTOGRAM_H_
-

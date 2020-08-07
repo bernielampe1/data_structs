@@ -1,5 +1,4 @@
-#ifndef _BHL_STACK_H_
-#define _BHL_STACK_H_
+#pragma once
 
 #include<ostream>
 
@@ -97,5 +96,3 @@ std::ostream &operator<<(std::ostream &os, const Stack<T> &rhs) {
 
   return (os);
 }
-
-#endif // _BHL_STACK_H_

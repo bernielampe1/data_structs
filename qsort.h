@@ -1,5 +1,4 @@
-#ifndef _BHL_QSORT_H_
-#define _BHL_QSORT_H_
+#pragma once
 
 #include "Array.h"
 
@@ -34,5 +33,3 @@ template <typename T> void qsort(Array<T> &a, int l, int r) {
     qsort(a, p + 1, r);
   }
 }
-
-#endif // _BHL_QSORT_H_

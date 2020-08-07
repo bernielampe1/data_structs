@@ -1,7 +1,4 @@
-#ifndef __MATRIX_H__
-#define __MATRIX_H__
-
-#include <math.h>
+#pragma once
 
 #include "Exception.h"
 #include "Vec.h"
@@ -176,5 +173,3 @@ std::ostream &operator<<(std::ostream &os, const Matrix<T> &m) {
 }
 
 #include "Matrix.inl"
-
-#endif // __MATRIX_H__

@@ -1,5 +1,4 @@
-#ifndef _BITVECTOR_H_
-#define _BITVECTOR_H_
+#pragma once
 
 #include "Exception.h"
 
@@ -108,5 +107,3 @@ ostream &operator<<(ostream &os, const BitVector &rhs) {
 
   return (os);
 }
-
-#endif /* _BITVECTOR_H_ */

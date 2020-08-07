@@ -1,5 +1,4 @@
-#ifndef _BHL_QUEUE_H_
-#define _BHL_QUEUE_H_
+#pragma once
 
 #include<ostream>
 
@@ -113,5 +112,3 @@ std::ostream &operator<<(std::ostream &os, const Queue<T> &rhs) {
 
   return (os);
 }
-
-#endif // _BHL_QUEUE_H_

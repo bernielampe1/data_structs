@@ -1,5 +1,4 @@
-#ifndef _BHL_HASHTABLE_H_
-#define _BHL_HASHTABLE_H_
+#pragma once
 
 template <typename K, typename T> class HashTable {
   struct Node {
@@ -193,5 +192,3 @@ public:
 
   const T &operator[](const K &k) const { return (find(k)); }
 };
-
-#endif // _BHL_HASHTABLE_H_
