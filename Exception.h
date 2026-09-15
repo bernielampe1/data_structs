@@ -5,7 +5,7 @@
 
 using namespace std;
 
-/* C++ error handeling class for passing simple strings. */
+/* C++ error handling class for passing simple strings. */
 class Exception : public exception {
 private:
   string mes;

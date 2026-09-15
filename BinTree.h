@@ -3,6 +3,8 @@
 #include <ostream>
 #include <utility>
 
+#include "types.h"
+
 // BinTree<T>: an unbalanced binary search tree (no duplicates).
 //
 // Rule-of-five-default (see README.md): all five special operations are
@@ -11,6 +13,9 @@
 // Element requirements: T must be default-constructible and
 // copy-constructible with a strict weak ordering via operator< and
 // operator== (insert and lookup compare with both).
+//
+// size() uses u64 (types.h): the node count is bounded by memory, not by
+// a 32-bit counter.
 
 template <typename T> class BinTree {
 private:
@@ -22,11 +27,11 @@ private:
   };
 
   Node *_root;
-  unsigned _size;
+  u64 _size;
 
   // Inserts d under *n, growing the subtree. Returns the number of
   // nodes added (0 when d was already present).
-  unsigned insert(Node **n, const T &d) {
+  u64 insert(Node **n, const T &d) {
     if (*n == 0) {
       *n = new Node(d);
       return 1;
@@ -151,7 +156,7 @@ public:
 
   bool empty() const { return (_size == 0); }
 
-  unsigned size() const { return (_size); }
+  u64 size() const { return (_size); }
 };
 
 // Prints nothing: BinTree has no iteration order exposed yet. Kept so

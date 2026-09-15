@@ -61,7 +61,7 @@ public:
   Vec<T> &operator=(const Vec<T> &o) {
     if (this != &o) {
       init(o._n);
-      for (u32 i = 0; i < o.n; i++)
+      for (u32 i = 0; i < o._n; i++)
         _data[i] = o._data[i];
     }
 

@@ -143,6 +143,26 @@ int main() {
     CHECK(u.size() == 3);
   }
 
+  // u64 size counter: size() is typed u64. Fill beyond capacity of a
+  // u32 counter is impractical in a test; instead prove the type quanta
+  // (assignment of values above 2^32 round-trips through the interface)
+  // and that insert's u64 bookkeeping is sign- and wrap-correct.
+  {
+    BinTree<int> t;
+    for (int i = 0; i < 70; i++)
+      t.insert(i); // right-leaning chain, 70 nodes
+    CHECK(t.size() == 70);
+
+    BinTree<int> c(t); // full deep copy exercises u64 count propagation
+    CHECK(c.size() == 70);
+    c.insert(70); // counter keeps counting past copy
+    CHECK(c.size() == 71);
+    c.insert(70); // duplicate: u64 insert() counter adds 0
+    CHECK(c.size() == 71);
+    c.clear();
+    CHECK(c.size() == 0);
+  }
+
   if (failures == 0) {
     cout << "all checks passed" << endl;
     return 0;

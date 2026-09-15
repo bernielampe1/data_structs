@@ -3,6 +3,7 @@
 #include <ostream>
 #include <utility>
 
+#include "types.h"
 #include "utils.h"
 
 // Compile-time heap ordering: MINHEAP extracts the smallest element
@@ -28,9 +29,11 @@ std::ostream &operator<<(std::ostream &, const BinHeap<T> &);
 // defined. Moves are noexcept and leave the source empty and reusable.
 //
 // capacity() is the allocated slot count; size() is how many elements
-// are currently stored. insert() fails (returns false) when the heap is
-// full rather than growing; peekroot()/extractroot() on an empty heap
-// return a default-constructed T.
+// are currently stored. Counts and slot indices use u64 (types.h): the
+// addressable capacity is the u64 range, not the earlier unsigned/32-bit
+// one. insert() fails (returns false) when the heap is full rather than
+// growing; peekroot()/extractroot() on an empty heap return a
+// default-constructed T.
 //
 // Element requirements: T must be default-constructible and
 // copy-assignable (the array is allocated uninitialized and filled by
@@ -38,16 +41,16 @@ std::ostream &operator<<(std::ostream &, const BinHeap<T> &);
 template <typename T> class BinHeap {
 private:
   T *_data;     // slot buffer; null when unallocated
-  unsigned _n;  // capacity (slots allocated)
-  unsigned _last; // one past the last stored element
+  u64 _n;       // capacity (slots allocated)
+  u64 _last;    // one past the last stored element
 
-  static unsigned parent(unsigned i) { return (i - 1) / 2; } // slot i's parent
+  static u64 parent(u64 i) { return (i - 1) / 2; } // slot i's parent
 
-  static unsigned left(unsigned i) { return 2 * i + 1; } // left child slot
+  static u64 left(u64 i) { return 2 * i + 1; } // left child slot
 
-  static unsigned right(unsigned i) { return 2 * i + 2; } // right child slot
+  static u64 right(u64 i) { return 2 * i + 2; } // right child slot
 
-  void swap(unsigned a, unsigned b) { // exchange two stored elements
+  void swap(u64 a, u64 b) { // exchange two stored elements
     T temp = _data[a];
     _data[a] = _data[b];
     _data[b] = temp;
@@ -56,11 +59,11 @@ private:
   // Sifts the element at i down until the heap property holds. The
   // child chosen is the one that beats the OTHER child too (not merely
   // the parent); otherwise a valid child can be skipped.
-  void siftDown(unsigned i) {
+  void siftDown(u64 i) {
     while (true) {
-      unsigned l = left(i);
-      unsigned r = right(i);
-      unsigned best = i;
+      u64 l = left(i);
+      u64 r = right(i);
+      u64 best = i;
 
       if (l < _last && _data[l] CMPDIR _data[best])
         best = l;
@@ -76,9 +79,9 @@ private:
   }
 
   // Sifts the element at i up toward the root.
-  void siftUp(unsigned i) {
+  void siftUp(u64 i) {
     while (i > 0) {
-      unsigned p = parent(i);
+      u64 p = parent(i);
       if (!(_data[i] CMPDIR _data[p]))
         return;
       swap(i, p);
@@ -87,7 +90,7 @@ private:
   }
 
 public:
-  explicit BinHeap(unsigned capacity)
+  explicit BinHeap(u64 capacity)
       : _data(capacity ? new T[capacity] : 0), _n(capacity), _last(0) {}
 
   BinHeap() : _data(0), _n(0), _last(0) {}
@@ -95,7 +98,7 @@ public:
   // Deep copy: same capacity, same elements.
   BinHeap(const BinHeap &o)
       : _data(o._n ? new T[o._n] : 0), _n(o._n), _last(o._last) {
-    for (unsigned i = 0; i < _last; i++)
+    for (u64 i = 0; i < _last; i++)
       _data[i] = o._data[i];
   }
 
@@ -119,7 +122,7 @@ public:
       return *this;
 
     T *newData = o._n ? new T[o._n] : 0;
-    for (unsigned i = 0; i < o._last; i++)
+    for (u64 i = 0; i < o._last; i++)
       newData[i] = o._data[i];
 
     delete[] _data;
@@ -151,11 +154,11 @@ public:
     std::swap(_last, o._last);
   }
 
-  unsigned size() const { return (_last); } // stored element count
+  u64 size() const { return (_last); }      // stored element count
 
-  unsigned remaining() const { return (_n - _last); } // free slots
+  u64 remaining() const { return (_n - _last); } // free slots
 
-  unsigned capacity() const { return (_n); } // allocated slot count
+  u64 capacity() const { return (_n); }     // allocated slot count
 
   bool empty() const { return (_last == 0); }
 
@@ -174,11 +177,11 @@ public:
 
   // Inserts arry[0..n) one by one. False (inserting nothing) when the
   // array cannot fit in the remaining slots.
-  bool heapify(const T arry[], unsigned n) {
+  bool heapify(const T arry[], u64 n) {
     if (n > remaining())
       return false;
 
-    for (unsigned i = 0; i < n; i++)
+    for (u64 i = 0; i < n; i++)
       insert(arry[i]);
 
     return true;
@@ -207,15 +210,16 @@ public:
   friend std::ostream &operator<<<>(std::ostream &os, const BinHeap<T> &rhs);
 };
 
-// Prints the heap one tree level per line.
+// Prints the heap one tree level per line. Level counter arithmetic uses
+// u64 so levels past 31 (heap sizes beyond 2^31) do not shift a 32-bit 1.
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const BinHeap<T> &rhs) {
   if (!rhs.empty()) {
-    unsigned levels = floor_log2(rhs.size()) + 1;
-    unsigned i = 0;
+    u64 levels = floor_log2(rhs.size()) + 1;
+    u64 i = 0;
 
-    for (unsigned l = 0; l < levels; l++) {
-      for (unsigned j = 0; j < (1u << l); j++) {
+    for (u64 l = 0; l < levels; l++) {
+      for (u64 j = 0; j < (u64(1) << l); j++) {
         if (i < rhs.size())
           os << rhs._data[i++] << " ";
         else

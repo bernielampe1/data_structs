@@ -194,6 +194,42 @@ int main() {
     CHECK(a.extractroot()._n == 9);
   }
 
+  // u64 capacity: a 2^33-slot heap (32 GiB of int) allocates, reports
+  // u64-typed counts, and the level printer handles it without 32-bit
+  // shift overflow. Small footprint: only [0..3) touched.
+  {
+    BinHeap<int> big(u64(1) << 33);
+    CHECK(big.capacity() == (u64(1) << 33));
+    CHECK(big.remaining() == (u64(1) << 33));
+    CHECK(big.size() == 0 && big.empty());
+    CHECK(big.insert(1) && big.insert(2) && big.insert(3));
+    CHECK(big.size() == 3);
+    CHECK(big.extractroot() == 3);
+    CHECK(big.extractroot() == 2);
+    CHECK(big.extractroot() == 1);
+    cout << "print:" << endl << big; // empty print after full extraction
+  }
+
+  // u64 accessors are addressable across the 32-bit boundary: capacity
+  // just past 2^32 validates that none of the arithmetic wraps in u32.
+  {
+    BinHeap<char> over32(u64(1) + (u64(1) << 32)); // 4 GiB of char
+    CHECK(over32.capacity() == u64(1) + (u64(1) << 32));
+    CHECK(over32.insert('a'));
+    CHECK(over32.size() == 1);
+    CHECK(over32.extractroot() == 'a');
+  }
+
+  // floor_log2<u64> overload: 2^40 must report 40, not wrap a 32-bit
+  // count (regression for the widened heap printer).
+  {
+    u64 v = u64(1) << 40;
+    CHECK(floor_log2(v) == 40);
+    CHECK(floor_log2(u64(1) << 63) == 63);
+    CHECK(floor_log2(u64(0xFFFFFFFF)) == 31);
+    CHECK(floor_log2(u64(1) << 32) == 32);
+  }
+
   // Copy assignment replaces contents (any capacity combination).
   {
     BinHeap<obj> a(20);
