@@ -1,7 +1,8 @@
-#include "BinHeap.h"
 #include <iostream>
 
 using namespace std;
+
+#include "BinHeap.h"
 
 struct obj {
   obj() : _n(-1) {}

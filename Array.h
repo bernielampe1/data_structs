@@ -1,194 +1,231 @@
 #pragma once
 
-// 02-26-2020
-// Rule-of-five implementation of template Array.
+// Array<T>: a fixed-length, contiguous sequence container.
+//
+// A rule-of-five implementation (see README.md): the destructor, copy and
+// move construction, and copy and move assignment are all defined. Where
+// the semantics overlap with std::vector they match it: operator[] is
+// unchecked, allocated elements are value-initialized (so an Array<int>
+// starts at zero), and iterators are STL-conformant random-access
+// iterators usable with the standard algorithms.
+//
+// Element counts and indices use size_type (u64, see types.h): 64 bits.
+//
+// Element requirements: T must be default-constructible and
+// copy-assignable (a consequence of new T[n]() and assignment-based
+// fills). Arrays of move-only types can be built and moved but not
+// copied or resized.
+//
+// Iterator invalidation: resize(), clear(), swap(), and both assignment
+// operators free or move the buffer, invalidating every iterator.
 
-// 01-01-2012
-// Rule-of-three implementation of template Array.
+#include <cstddef>
+#include <memory>
+#include <ostream>
+#include <utility>
+
+#include "types.h"
 
 template <typename T> class Array {
+public:
+  typedef u64 size_type; // element counts and indices, up to 64 bits
+
 private:
-  T *_data;
-  unsigned _n;
+  T *_data;         // element buffer; nullptr when _n == 0
+  size_type _n;     // number of elements
+
+  // Allocates n value-initialized elements under an RAII holder, so a
+  // throwing fill leaks nothing.
+  static std::unique_ptr<T[]> allocate(size_type n) {
+    return std::unique_ptr<T[]>(new T[n]());
+  }
 
 public:
-  class iterator {
+  // One class serves both iterator flavors: U is T for iterator and
+  // const T for const_iterator. For a contiguous buffer, a wrapped
+  // pointer is all an iterator needs.
+  template <typename U> class Iterator {
   private:
-    Array<T> *_ptr;
-    unsigned _p;
+    U *_curr; // current element; end() is one past the last
+
+    Iterator(U *curr) : _curr(curr) {} // private: only Array builds these
+
+    friend class Array<T>;
 
   public:
-    iterator(Array<T> *ptr, unsigned p) : _ptr(ptr), _p(p) {}
+    // Traits that name this a random-access iterator to the STL.
+    using value_type = U;
+    using difference_type = std::ptrdiff_t;
+    using pointer = U *;
+    using reference = U &;
+    using iterator_category = std::random_access_iterator_tag;
 
-    bool operator==(const iterator &o) const { return _p == o._p; }
-    bool operator!=(const iterator &o) const { return _p != o._p; }
-    bool operator<(const iterator &o) const { return _p < o._p; }
-    bool operator>(const iterator &o) const { return _p > o._p; }
-    iterator &operator++() {
-      _p++;
+    bool operator==(const Iterator &o) const { return _curr == o._curr; } // same position
+    bool operator!=(const Iterator &o) const { return _curr != o._curr; } // different position
+    bool operator<(const Iterator &o) const { return _curr < o._curr; } // before o
+    bool operator>(const Iterator &o) const { return _curr > o._curr; } // after o
+    bool operator<=(const Iterator &o) const { return _curr <= o._curr; } // o or before
+    bool operator>=(const Iterator &o) const { return _curr >= o._curr; } // o or after
+
+    Iterator &operator++() { // advance one (pre)
+      ++_curr;
       return *this;
     }
-    iterator operator++(int) {
-      iterator it = *this;
-      _p++;
-      return (it);
-    }
-    iterator &operator--() {
-      _p--;
-      return *this;
-    }
-    iterator operator--(int) {
-      iterator it = *this;
-      _p--;
+    Iterator operator++(int) { // advance one (post)
+      Iterator it = *this;
+      ++_curr;
       return it;
     }
-    iterator &operator+=(const int i) {
-      _p += i;
+    Iterator &operator--() { // retreat one (pre)
+      --_curr;
       return *this;
     }
-    iterator &operator-=(const int i) {
-      _p -= i;
+    Iterator operator--(int) { // retreat one (post)
+      Iterator it = *this;
+      --_curr;
+      return it;
+    }
+
+    Iterator &operator+=(difference_type i) { // advance i elements
+      _curr += i;
       return *this;
     }
-    T &operator*() const { return (*_ptr)[_p]; }
-    T *operator->() const { return &(operator*()); };
+    Iterator &operator-=(difference_type i) { // retreat i elements
+      _curr -= i;
+      return *this;
+    }
+
+    U &operator*() const { return *_curr; }         // the current element
+    U *operator->() const { return _curr; }         // member access on it
+    U &operator[](difference_type i) const { return _curr[i]; } // offset i
+
+    Iterator operator+(difference_type i) const { return Iterator(_curr + i); } // this + i
+    Iterator operator-(difference_type i) const { return Iterator(_curr - i); } // this - i
+    difference_type operator-(const Iterator &o) const { // distance from o
+      return _curr - o._curr;
+    }
+
+    friend Iterator operator+(difference_type i, const Iterator &it) { // i + it
+      return it + i;
+    }
   };
 
-  class const_iterator {
-  private:
-    const Array<T> *_ptr;
-    unsigned _p;
+  using iterator = Iterator<T>;
+  using const_iterator = Iterator<const T>;
 
-  public:
-    const_iterator(const Array<T> *ptr, unsigned p) : _ptr(ptr), _p(p) {}
+  Array() : _data(nullptr), _n(0) {} // empty array
 
-    bool operator==(const const_iterator &o) const { return _p == o._p; }
-    bool operator!=(const const_iterator &o) const { return _p != o._p; }
-    bool operator<(const const_iterator &o) const { return _p < o._p; }
-    bool operator>(const const_iterator &o) const { return _p > o._p; }
-    const_iterator &operator++() {
-      _p++;
-      return *this;
-    }
-    const_iterator operator++(int) {
-      const_iterator it = *this;
-      _p++;
-      return it;
-    }
-    const_iterator &operator--() {
-      _p--;
-      return *this;
-    }
-    const_iterator operator--(int) {
-      const_iterator it = *this;
-      _p--;
-      return it;
-    }
-    const_iterator &operator+=(const int i) {
-      _p += i;
-      return *this;
-    }
-    const_iterator &operator-=(const int i) {
-      _p -= i;
-      return *this;
-    }
-    const T &operator*() const { return (*_ptr)[_p]; }
-    const T *operator->() const { return &(operator*()); }
-  };
+  explicit Array(size_type n) // n value-initialized elements
+      : _data(allocate(n).release()), _n(n) {}
 
-public:
-  Array() : _data(0), _n(0) {}
-
-  Array(const unsigned n) : _data(new T[n]), _n(n) {}
-
-  Array(const T &o, const unsigned n) : _data(new T[n]), _n(n) {
-    for (unsigned i = 0; i < _n; i++)
+  Array(const T &o, size_type n) : _data(new T[n]()), _n(n) { // n copies of o
+    for (size_type i = 0; i < _n; ++i)
       _data[i] = o;
   }
 
-  Array(const Array &o) : _data(new T[o._n]), _n(o._n) {
-    for (unsigned i = 0; i < _n; i++)
+  // Deep copy of o. The buffer is held under an RAII guard until the
+  // fill completes, so a throwing element copy leaks nothing.
+  Array(const Array &o) : _data(allocate(o._n).release()), _n(o._n) {
+    std::unique_ptr<T[]> guard(_data);
+    for (size_type i = 0; i < _n; ++i)
       _data[i] = o._data[i];
+    guard.release();
   }
 
-  Array(Array &&o) : _data(o._data), _n(o._n) {
-    o._data = 0;
+  Array(Array &&o) noexcept : _data(o._data), _n(o._n) { // steal o's buffer; o left empty
+    o._data = nullptr;
     o._n = 0;
   }
 
-  virtual ~Array() { delete[] _data; }
+  ~Array() { delete[] _data; } // free the buffer
 
+  // Deep copy: the new buffer is built and filled before the old one is
+  // freed, so a failed allocation leaves *this untouched.
   Array &operator=(const Array &o) {
-    if (&o != this) {
+    if (this == &o)
+      return *this;
 
-      if (this->_n != o._n) {
-        delete[] _data;
-        _data = new T[_n];
-        _n = o._n;
-      }
+    std::unique_ptr<T[]> newData = allocate(o._n); // freed if the fill throws
+    for (size_type i = 0; i < o._n; ++i)
+      newData[i] = o._data[i];
 
-      for (unsigned i = 0; i < _n; i++)
-        _data[i] = o._data[i];
-    }
+    delete[] _data;
+    _data = newData.release();
+    _n = o._n;
 
     return *this;
   }
 
-  Array &operator=(Array &&o) {
+  // Steal o's buffer (freeing ours, unconditionally -- delete[] on nullptr
+  // is a no-op, and *this may own a buffer while reporting size 0).
+  Array &operator=(Array &&o) noexcept {
     if (this != &o) {
-      if (_n)
-        delete[] _data;
-
+      delete[] _data;
       _data = o._data;
-      o._data = 0;
-
       _n = o._n;
+      o._data = nullptr;
       o._n = 0;
     }
-
     return *this;
   }
 
-  const T &operator[](const unsigned i) const { return (_data[i]); }
-
-  T &operator[](const unsigned i) { return (_data[i]); }
-
-  void resize(const unsigned n) {
-    if (n != _n) {
-      T *_tmpData = new T[n];
-
-      unsigned m = n < _n ? n : _n;
-      for (unsigned i = 0; i < m; i++)
-        _tmpData[i] = _data[i];
-
-      if (_data)
-        delete[] _data;
-      _data = _tmpData;
-      _n = n;
-    }
+  // Constant-time exchange of both buffers.
+  void swap(Array &o) {
+    std::swap(_data, o._data);
+    std::swap(_n, o._n);
   }
 
-  const T *data() { return (_data); }
+  // Resize to n, keeping the first min(n, _n) elements; new elements are
+  // value-initialized. The new buffer is filled before the old is freed.
+  void resize(size_type n) {
+    if (n == _n)
+      return;
 
-  unsigned size() const { return (_n); }
+    if (n == 0) { // nothing to keep: release everything
+      clear();
+      return;
+    }
 
-  bool empty() { return (_n == 0); }
+    std::unique_ptr<T[]> newData = allocate(n); // freed if the copy throws
+    size_type keep = n < _n ? n : _n;
+    for (size_type i = 0; i < keep; ++i)
+      newData[i] = _data[i];
 
-  void clear() { resize(0); }
+    delete[] _data;
+    _data = newData.release();
+    _n = n;
+  }
 
-  iterator begin() { return (iterator(this, 0)); }
-  const_iterator begin() const { return (const_iterator(this, 0)); }
+  // Release all memory; the array becomes empty and reusable.
+  void clear() {
+    delete[] _data;
+    _data = nullptr;
+    _n = 0;
+  }
 
-  iterator end() { return (iterator(this, _n)); }
-  const_iterator end() const { return (const_iterator(this, _n)); }
+  T &operator[](size_type i) { return _data[i]; }             // unchecked access
+  const T &operator[](size_type i) const { return _data[i]; } // unchecked read
+
+  T *data() { return _data; }             // direct buffer access
+  const T *data() const { return _data; } // direct buffer read
+
+  size_type size() const { return _n; }   // element count
+  bool empty() const { return _n == 0; }  // no elements?
+
+  iterator begin() { return iterator(_data); }                   // first element
+  const_iterator begin() const { return const_iterator(_data); } // same, const
+
+  iterator end() { return iterator(_data + _n); }                // past the last element
+  const_iterator end() const { return const_iterator(_data + _n); } // same, const
 };
 
-#include <ostream>
+// Prints the elements separated by ", " with no trailing separator.
 template <typename T>
-std::ostream &operator<<(std::ostream &os, const Array<T> &o) {
-  for (typename Array<T>::const_iterator it = o.begin(); it != o.end(); it++) {
-    os << *it << ", ";
+std::ostream &operator<<(std::ostream &os, const Array<T> &a) {
+  for (typename Array<T>::size_type i = 0; i < a.size(); ++i) {
+    if (i > 0)
+      os << ", ";
+    os << a[i];
   }
-
-  return (os);
+  return os;
 }
