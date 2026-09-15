@@ -1,6 +1,3 @@
-Summary:
-    This repository is a collection of data structures authored in C++. They are largely pedagogical, minimally tested and not optimizied.
-
 To be implemented:
   Set, Map, HashMap, Trie, Sparse Matrix, N-dimensional Array, Undirected Graph, Directed Acyclic Graph  
 
