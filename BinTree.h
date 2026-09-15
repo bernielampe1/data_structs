@@ -1,5 +1,17 @@
 #pragma once
 
+#include <ostream>
+#include <utility>
+
+// BinTree<T>: an unbalanced binary search tree (no duplicates).
+//
+// Rule-of-five-default (see README.md): all five special operations are
+// defined. Moves are noexcept and leave the source empty and reusable.
+//
+// Element requirements: T must be default-constructible and
+// copy-constructible with a strict weak ordering via operator< and
+// operator== (insert and lookup compare with both).
+
 template <typename T> class BinTree {
 private:
   struct Node {
@@ -9,123 +21,144 @@ private:
     T _data;
   };
 
-private:
   Node *_root;
   unsigned _size;
 
-  void _insert(Node **n, const T &d) {
-    if (*n != 0) {
-      if (d < (*n)->_data) {
-        if ((*n)->_left == 0)
-          (*n)->_left = new Node(d);
-        else
-          return (_insert(&((*n)->_left), d));
-      } else if (d > (*n)->_data) {
-        if ((*n)->_right == 0)
-          (*n)->_right = new Node(d);
-        else
-          return (_insert(&((*n)->_right), d));
-      }
-    } else {
+  // Inserts d under *n, growing the subtree. Returns the number of
+  // nodes added (0 when d was already present).
+  unsigned insert(Node **n, const T &d) {
+    if (*n == 0) {
       *n = new Node(d);
-    }
-  }
-
-  bool _exists(const Node *n, const T &d) const {
-    if (n != 0) {
-      if (d == n->_data) {
-        return (true);
-      }
-
-      if (d < n->_data) {
-        return (_exists(n->_left, d));
-      } else if (d > n->_data) {
-        return (_exists(n->_right, d));
-      }
+      return 1;
     }
 
-    return (false);
+    if (d < (*n)->_data)
+      return insert(&(*n)->_left, d);
+    if ((*n)->_data < d)
+      return insert(&(*n)->_right, d);
+
+    return 0; // equal: already in the tree
   }
 
-  const T &_find(const Node *n, const T &d) const {
-    if (n != 0) {
-      if (d == n->_data) {
-        return (n->_data);
-      }
-
-      if (d < n->_data) {
-        return (_find(n->_left, d));
-      } else if (d > n->_data) {
-        return (_find(n->_right, d));
-      }
+  // True when the subtree at n holds d.
+  bool exists(const Node *n, const T &d) const {
+    while (n != 0) {
+      if (d == n->_data)
+        return true;
+      n = (d < n->_data) ? n->_left : n->_right;
     }
+    return false;
   }
 
-  void _clear(Node **n) {
-    if ((*n)->_left)
-      _clear(&((*n)->_left));
-    if ((*n)->_right)
-      _clear(&((*n)->_right));
+  // The subtree at n holds d; null when absent.
+  const Node *find(const Node *n, const T &d) const {
+    while (n != 0) {
+      if (d == n->_data)
+        return n;
+      n = (d < n->_data) ? n->_left : n->_right;
+    }
+    return 0;
+  }
+
+  // Frees every node of the subtree at *n (safe on null).
+  void clear(Node **n) {
+    if (*n == 0)
+      return;
+
+    clear(&(*n)->_left);
+    clear(&(*n)->_right);
 
     delete *n;
     *n = 0;
   }
 
-  void _copynode(Node **dest, Node **src) {
-    if (*src) {
-      if (*dest != 0) {
-        (*dest)->_data = (*src)->_data; // copy data over
-      }
-      else {
-        *dest = new Node((*src)->_data);
-      }
+  // Builds a copy of the subtree at src; null stays null.
+  static Node *clone(const Node *src) {
+    if (src == 0)
+      return 0;
 
-      if ((*src)->_left != 0) _copynode(&(*dest)->_left, &(*src)->_left);
-      if ((*src)->_right != 0) _copynode(&(*dest)->_right, &(*src)->_right);
-    }
+    Node *node = new Node(src->_data);
+    node->_left = clone(src->_left);
+    node->_right = clone(src->_right);
+    return node;
   }
 
 public:
   BinTree() : _root(0), _size(0) {}
 
-  BinTree(const BinTree &o): _root(0), _size(o._size) {
-    _copynode(&this->_root, &o._root);
+  // Deep copy: same elements, same shape.
+  BinTree(const BinTree &o) : _root(clone(o._root)), _size(o._size) {}
+
+  // Steal o's nodes; o left empty.
+  BinTree(BinTree &&o) noexcept : _root(o._root), _size(o._size) {
+    o._root = 0;
+    o._size = 0;
   }
 
-  BinTree& operator=(BinTree &o) {
+  ~BinTree() { clear(&_root); }
+
+  // Deep copy: the new tree is built before the old one is freed, so a
+  // failed allocation leaves *this untouched. Replaces all contents.
+  BinTree &operator=(const BinTree &o) {
+    if (this == &o)
+      return *this;
+
+    Node *newRoot = clone(o._root); // may throw: *this untouched until here
+
+    clear(&_root);
+    _root = newRoot;
+    _size = o._size;
+
+    return *this;
+  }
+
+  // Steal o's nodes (freeing ours, unconditionally).
+  BinTree &operator=(BinTree &&o) noexcept {
     if (this != &o) {
-        _copynode(&this->_root, &o._root);
-        this->_size = o._size;
+      clear(&_root);
+      _root = o._root;
+      _size = o._size;
+      o._root = 0;
+      o._size = 0;
     }
     return *this;
   }
 
-  ~BinTree() { clear(); }
-
-  void insert(const T &d) {
-    _insert(&_root, d);
-    _size++;
+  // Constant-time exchange of both trees.
+  void swap(BinTree &o) {
+    std::swap(_root, o._root);
+    std::swap(_size, o._size);
   }
 
-  bool exists(const T &d) const { return (_exists(_root, d)); }
+  // Inserts d. A duplicate is ignored (size unchanged).
+  void insert(const T &d) { _size += insert(&_root, d); }
 
-  const T &find(const T &d) const { return (_find(_root, d)); }
+  // True when d is present.
+  bool exists(const T &d) const { return exists(_root, d); }
 
-  void clear() { _clear(&_root); }
+  // The stored element equal to d, or a default T when absent.
+  const T &find(const T &d) const {
+    static T absent;
+    const Node *n = find(_root, d);
+    return n ? n->_data : absent;
+  }
+
+  // Frees every node; the tree becomes empty and reusable.
+  void clear() {
+    clear(&_root);
+    _size = 0;
+  }
 
   bool empty() const { return (_size == 0); }
 
   unsigned size() const { return (_size); }
 };
 
-#include<iostream>
+// Prints nothing: BinTree has no iteration order exposed yet. Kept so
+// existing includes keep compiling; a real implementation belongs with
+// in-order iterators.
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const BinTree<T> &o) {
-/*
-  for (typename BinTree<T>::const_iterator it = o.begin(); it != o.end(); it++) {
-    os << *it << ", ";
-  }
-*/
-
+  (void)o; // no iteration order exposed yet
   return (os);
 }
