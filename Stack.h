@@ -1,10 +1,19 @@
 #pragma once
 
-#include<ostream>
+#include <ostream>
+#include <utility>
 
 template <typename T> class Stack;
 template <typename T>
 std::ostream &operator<<(std::ostream &, const Stack<T> &);
+
+// Stack<T>: LIFO container built on a singly-linked node chain.
+//
+// Rule-of-five-default (see README.md): all five special operations are
+// defined. Moves are noexcept and leave the source empty and reusable.
+//
+// Element requirements: T must be default-constructible and
+// copy-assignable (nodes are allocated with data attached).
 
 template <typename T> class Stack {
   struct Node {
@@ -15,34 +24,53 @@ template <typename T> class Stack {
   };
 
 private:
-  Node *_top;
-  unsigned _n;
+  Node *_top;   // top node; null when empty
+  unsigned _n;  // number of nodes
 
+  // Makes *this a copy of rhs. The new chain is built in a temporary
+  // and adopted only when complete, so a throwing element copy leaves
+  // *this untouched (strong exception safety) and leaks nothing.
+  // Building in isolation also makes self-assignment safe.
   void copy(const Stack<T> &rhs) {
-    if (this != &rhs) {
-      clear();
+    Stack<T> tmp;
 
-      _n = rhs._n;
-      Node *ptr1 = rhs._top;
-      Node *ptr2 = 0;
-      for (unsigned i = 0; i < _n; i++) {
-        if (ptr2)
-          ptr2 = ptr2->_prev = new Node(ptr1->_data, 0);
-        else
-          ptr2 = new Node(ptr1->_data, 0);
-
-        ptr1 = ptr1->_prev;
-
-        if (i == 0)
-          _top = ptr2;
-      }
+    Node *ptr1 = rhs._top;
+    Node *ptr2 = 0;
+    while (ptr1 != 0) {
+      Node *node = new Node(ptr1->_data, 0);
+      if (ptr2)
+        ptr2->_prev = node;
+      else
+        tmp._top = node;
+      ptr2 = node;
+      ptr1 = ptr1->_prev;
     }
+    tmp._n = rhs._n;
+
+    swap(tmp); // tmp's destructor frees our old chain
+  }
+
+public:
+  // Constant-time exchange of both chains.
+  void swap(Stack &o) {
+    Node *t = _top;
+    unsigned n = _n;
+    _top = o._top;
+    _n = o._n;
+    o._top = t;
+    o._n = n;
   }
 
 public:
   Stack() : _top(0), _n(0) {}
 
-  Stack(const Stack &rhs) : _top(0), _n(rhs._n) { copy(rhs); }
+  Stack(const Stack &rhs) : _top(0), _n(0) { copy(rhs); }
+
+  Stack(Stack &&o) noexcept // steal o's chain; o left empty
+      : _top(o._top), _n(o._n) {
+    o._top = 0;
+    o._n = 0;
+  }
 
   ~Stack() { clear(); }
 
@@ -51,11 +79,22 @@ public:
     return (*this);
   }
 
+  Stack &operator=(Stack &&o) noexcept { // steal o's chain
+    if (this != &o) {
+      clear();
+      _top = o._top;
+      _n = o._n;
+      o._top = 0;
+      o._n = 0;
+    }
+    return (*this);
+  }
+
   unsigned size() const { return (_n); }
 
   bool empty() const { return (_n == 0); }
 
-  void clear() {
+  void clear() { // free every node; stack becomes empty
     Node *ptr = _top;
     while (ptr != 0) {
       Node *tmp = ptr;
@@ -67,12 +106,12 @@ public:
     _n = 0;
   }
 
-  void push(const T &d) {
+  void push(const T &d) { // push d onto the top
     _top = new Node(d, _top);
     _n++;
   }
 
-  void pop() {
+  void pop() { // remove the top element (no-op if empty)
     if (!empty()) {
       Node *tmp = _top;
       _top = _top->_prev;
@@ -81,17 +120,21 @@ public:
     }
   }
 
-  T &top() { return (_top->_data); }
+  T &top() { return (_top->_data); } // top element (UB if empty)
 
   friend std::ostream &operator<<<>(std::ostream &os, const Stack<T> &rhs);
 };
 
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const Stack<T> &rhs) {
+  bool first = true;
   typename Stack<T>::Node *ptr = rhs._top;
   while (ptr != 0) {
-    os << ptr->_data << ", ";
+    if (!first)
+      os << ", ";
+    os << ptr->_data;
     ptr = ptr->_prev;
+    first = false;
   }
 
   return (os);

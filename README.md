@@ -2,7 +2,7 @@ Summary:
     This repository is a collection of data structures authored in C++. They are largely pedagogical, minimally tested and not optimizied.
 
 To be implemented:
-  Set, Map, HashMap, Trie, Skip Lists, Sparse Matrix, N-dimensional Array, Undirected Graph, Directed Acyclic Graph  
+  Set, Map, HashMap, Trie, Sparse Matrix, N-dimensional Array, Undirected Graph, Directed Acyclic Graph  
 
 Rule-of-five-default:
     If you define, =default or =delete any of dtor, copy ctor, assignment op, move ctor, move assignment op then you must define, =default or =delete them all.
