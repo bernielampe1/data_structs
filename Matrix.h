@@ -1,13 +1,33 @@
 #pragma once
 
+#include <memory>
+#include <ostream>
+
 #include "Exception.h"
 #include "Vec.h"
 #include "types.h"
 
-/* Abstraction of simple dense matrix, not optimized */
+// Matrix<T>: a simple dense row-major matrix, not optimized.
+//
+// A rule-of-five implementation (see README.md): the destructor, copy
+// and move construction, and copy and move assignment are all defined.
+// Moves are noexcept and leave the source empty and reusable.
+//
+// operator+, -, *, / between matrices are ELEMENT-WISE (Hadamard
+// products); dot() is the true matrix/matrix-vector product. All
+// binary/compound matrix operators require equal shapes and throw
+// Exception otherwise; dot() requires compatible shapes.
+//
+// operator[] and get() index the flat buffer unchecked (same contract
+// as std::vector's operator[]); at(r, c) is bounds-checked and throws.
+//
+// eye(d) is a static d x d identity factory.
+//
+// Element requirements: numeric T (integers work for arithmetic but
+// not for inverse/solve, which divide).
 template <typename T> class Matrix {
 private:
-  T *_data;         // columns in row major order
+  T *_data;         // row-major order
   u32 _rows, _cols; // matrix dimensions
 
 public:
@@ -17,37 +37,55 @@ public:
     init(r, c);
   }
 
-  Matrix(const T m[], const u32 r, const u32 c) : _data(0), _rows(r), _cols(c) {
-    init(_rows, _cols);
-    for(u32 i = 0; i < _rows * _cols; i++) _data[i] = m[i];
+  // r x c from a flat row-major array of r * c values.
+  Matrix(const T m[], const u32 r, const u32 c)
+      : _data(0), _rows(r), _cols(c) {
+    std::unique_ptr<T[]> temp(new T[r * c]());
+    for (u32 i = 0; i < r * c; i++)
+      temp[i] = m[i];
+    _data = temp.release();
   }
 
+  // Deep copy: the new buffer is filled under an RAII guard, so a
+  // throwing element copy leaks nothing.
   Matrix(const Matrix<T> &m) : _data(0), _rows(m._rows), _cols(m._cols) {
-    init(_rows, _cols);
+    std::unique_ptr<T[]> guard(new T[_rows * _cols]());
     for (u32 i = 0; i < _rows * _cols; i++)
-      _data[i] = m._data[i];
+      guard[i] = m._data[i];
+    _data = guard.release();
   }
 
-  Matrix<T>(Matrix<T> &&m) : _data(m._data), _rows(m._rows), _cols(m._cols) {
+  // Steal m's buffer; m left empty and reusable.
+  Matrix(Matrix<T> &&m) noexcept
+      : _data(m._data), _rows(m._rows), _cols(m._cols) {
     m._data = 0;
     m._rows = m._cols = 0;
   }
 
+  ~Matrix() { delete[] _data; }
+
+  // Deep copy: the new buffer is built and filled before the old one is
+  // freed, so a failed allocation leaves *this untouched.
   Matrix<T> &operator=(const Matrix<T> &m) {
-    if (this != &m) {
-      init(m._rows, m._cols);
-      for (u32 i = 0; i < _rows * _cols; i++)
-        _data[i] = m._data[i];
-    }
+    if (this == &m)
+      return *this;
+
+    std::unique_ptr<T[]> temp(new T[m._rows * m._cols]());
+    for (u32 i = 0; i < m._rows * m._cols; i++)
+      temp[i] = m._data[i];
+
+    delete[] _data;
+    _data = temp.release();
+    _rows = m._rows;
+    _cols = m._cols;
 
     return *this;
   }
 
-  Matrix<T> &operator=(Matrix<T> &&m) {
+  // Steal m's buffer (freeing ours, unconditionally).
+  Matrix<T> &operator=(Matrix<T> &&m) noexcept {
     if (this != &m) {
-      if (_data)
-        clear();
-
+      delete[] _data;
       _data = m._data;
       _rows = m._rows;
       _cols = m._cols;
@@ -59,24 +97,31 @@ public:
     return *this;
   }
 
-  ~Matrix() { clear(); }
+  // Constant-time exchange of both buffers.
+  void swap(Matrix<T> &m) {
+    std::swap(_data, m._data);
+    std::swap(_rows, m._rows);
+    std::swap(_cols, m._cols);
+  }
 
+  // Reinitializes to r x c, every element v (default 0), releasing any
+  // previous storage. The new buffer is allocated before the old is
+  // freed, so a failed allocation leaves *this untouched.
   void init(const u32 r, const u32 c, const T v = 0) {
-    T *temp = new T[r * c];
+    std::unique_ptr<T[]> temp(new T[r * c]());
 
-    if (_data)
-      clear();
+    delete[] _data;
+    _data = temp.release();
     _rows = r;
     _cols = c;
-    _data = temp;
 
     for (u32 i = 0; i < _rows * _cols; i++)
       _data[i] = v;
   }
 
+  // Releases all memory; the matrix becomes empty and reusable.
   void clear() {
-    if (_data)
-      delete[] _data;
+    delete[] _data;
     _rows = _cols = 0;
     _data = 0;
   }
@@ -86,15 +131,37 @@ public:
 
   u32 cols() const { return (_cols); }
 
-  T &get(u32 r, u32 c) const { return (_data[r * _cols + c]); }
+  u32 size() const { return (_rows * _cols); } // element count
 
-  T &operator[](u32 i) { return (_data[i]); }
+  bool empty() const { return (_rows == 0 || _cols == 0); }
 
-  /* init square identity */
-  Matrix<T> eye(u32 d) {
-    init(d, d);
+  T &get(const u32 r, const u32 c) { return (_data[r * _cols + c]); } // unchecked
+
+  const T &get(const u32 r, const u32 c) const { return (_data[r * _cols + c]); }
+
+  T &operator[](const u32 i) { return (_data[i]); }             // unchecked
+
+  const T &operator[](const u32 i) const { return (_data[i]); } // unchecked read
+
+  // Bounds-checked access: throws Exception when (r, c) is outside.
+  T &at(const u32 r, const u32 c) {
+    if (r >= _rows || c >= _cols)
+      throw Exception("Matrix::at: coordinates outside the matrix");
+    return _data[r * _cols + c];
+  }
+
+  const T &at(const u32 r, const u32 c) const {
+    if (r >= _rows || c >= _cols)
+      throw Exception("Matrix::at: coordinates outside the matrix");
+    return _data[r * _cols + c];
+  }
+
+  /* d x d identity */
+  static Matrix<T> eye(const u32 d) {
+    Matrix<T> m(d, d);
     for (u32 i = 0; i < d; i++)
-      _data[i * d + i];
+      m._data[i * d + i] = T(1);
+    return m;
   }
 
   /* Matrix scalar operations */
@@ -110,7 +177,7 @@ public:
   Matrix<T> operator/(const T &c) const;
   Matrix<T> &operator/=(const T &c);
 
-  /* Simple composition operators */
+  /* Simple composition operators (ELEMENT-WISE, shape-checked) */
   Matrix<T> operator+(const Matrix<T> &m) const;
   Matrix<T> &operator+=(const Matrix<T> &m);
 
@@ -160,16 +227,24 @@ public:
   Matrix<T> inverse_2() const;
 };
 
+// Prints the elements row by row, ", " separated, one newline per row,
+// with no trailing separator. Written to os (the old version wrongly
+// wrote to std::cout).
 template<typename T>
 std::ostream &operator<<(std::ostream &os, const Matrix<T> &m) {
-    for(u32 r = 0; r < m.rows(); r++) {
-        for(u32 c = 0; c < m.cols(); c++) {
-            os << m.get(r, c) << ", ";
-        }
-        cout << std::endl;
+  for (u32 r = 0; r < m.rows(); r++) {
+    for (u32 c = 0; c < m.cols(); c++) {
+      if (c > 0)
+        os << ", ";
+      os << m.get(r, c);
     }
+    os << "\n";
+  }
 
-    return os;
+  return os;
 }
+
+// Constant-time exchange (lets the std::swap idiom find the member).
+template<typename T> void swap(Matrix<T> &a, Matrix<T> &b) { a.swap(b); }
 
 #include "Matrix.inl"

@@ -1,6 +1,6 @@
 #pragma once
 
-#define ABS(N) ((N < 0) ? (-N) : (N))
+#define ABS(N) ((N) < 0 ? (-(N)) : (N))
 
 // signed primitive types
 typedef char s8;
