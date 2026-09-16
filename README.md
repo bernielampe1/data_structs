@@ -1,4 +1,4 @@
-This is a pedagogical set of data structs, and some algorithms in C++. We concentrated on the rule-of-five implementations. The rule-of-zero is a better way to do this so you don't have to re-accomplish work and inevitably introduce bugs. These are used for learning and teaching.
+This is a pedagogical set of data structs, and some algorithms in C++. It is concentrated on the rule-of-five implementations. The rule-of-zero is a better way to do this so you don't have to re-accomplish work and inevitably introduce bugs. These are used for learning and teaching.
 
 ## Rules
 
