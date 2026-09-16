@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdlib>
+#include <utility>
+
+#include "Exception.h"
 #include "types.h"
 
 /* Abstraction of a 2-D vector float */
@@ -53,25 +56,30 @@ public:
       _data[i] = v._data[i];
   }
 
-  Vec<T>(Vec<T> &&o) : _n(o._n), _data(o._data) {
+  Vec<T>(Vec<T> &&o) noexcept : _n(o._n), _data(o._data) { // steal o's buffer
     o._data = 0;
     o._n = 0;
   }
 
+  // Deep copy: the new buffer is built and filled before the old one
+  // is freed, so a failed allocation leaves *this untouched.
   Vec<T> &operator=(const Vec<T> &o) {
     if (this != &o) {
-      init(o._n);
+      T *temp = new T[o._n];
       for (u32 i = 0; i < o._n; i++)
-        _data[i] = o._data[i];
+        temp[i] = o._data[i];
+
+      clear();
+      _data = temp;
+      _n = o._n;
     }
 
     return *this;
   }
 
-  Vec<T> &operator=(Vec<T> &&o) {
+  Vec<T> &operator=(Vec<T> &&o) noexcept { // steal o's buffer unconditionally
     if (this != &o) {
-      if (_data)
-        clear();
+      clear();
 
       _data = o._data;
       _n = o._n;
@@ -83,18 +91,22 @@ public:
     return *this;
   }
 
+  // Constant-time exchange of both buffers.
+  void swap(Vec<T> &o) {
+    std::swap(_n, o._n);
+    std::swap(_data, o._data);
+  }
+
   ~Vec() { clear(); }
 
   void init(const u32 n, const T &v = 0) {
     T *temp = new T[n];
+    for (u32 i = 0; i < n; i++)
+      temp[i] = v;
 
-    if (_data)
-      clear();
-
+    clear();
     _n = n;
     _data = temp;
-    for (u32 i = 0; i < n; i++)
-      _data[i] = v;
   }
 
   void clear() {
@@ -141,11 +153,19 @@ public:
 };
 
 #include <ostream>
+// Prints the elements separated by ", " with no trailing separator.
 template<typename T>
 std::ostream &operator<<(std::ostream &os, const Vec<T> &v) {
-    for(u32 i = 0; i < v.len(); i++) os << v[i] << ",";
+    for (u32 i = 0; i < v.len(); i++) {
+      if (i > 0)
+        os << ", ";
+      os << v[i];
+    }
     return os;
 }
+
+// Constant-time exchange (lets the std::swap idiom find the member).
+template<typename T> void swap(Vec<T> &a, Vec<T> &b) { a.swap(b); }
 
 #include "Vec.inl"
 

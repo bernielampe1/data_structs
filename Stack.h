@@ -120,10 +120,14 @@ public:
     }
   }
 
-  T &top() { return (_top->_data); } // top element (UB if empty)
+  T &top() { return (_top->_data); }             // top element (UB if empty)
+  const T &top() const { return (_top->_data); } // top read (UB if empty)
 
   friend std::ostream &operator<<<>(std::ostream &os, const Stack<T> &rhs);
 };
+
+// Constant-time exchange (lets the std::swap idiom find the member).
+template <typename T> void swap(Stack<T> &a, Stack<T> &b) { a.swap(b); }
 
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const Stack<T> &rhs) {

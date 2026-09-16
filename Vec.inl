@@ -5,8 +5,9 @@ template <typename T> T Vec<T>::sum() const {
 }
 
 template <typename T> T Vec<T>::prod() const {
-    T prod = 0;
-    for(u32 i = 0; i < _n; i++) prod *= _data[i];
+    T prod = T(1); // multiplicative identity (the old start value 0
+                   // made every product of a real vector return 0)
+    for (u32 i = 0; i < _n; i++) prod *= _data[i];
     return prod;
 }
 
@@ -70,7 +71,7 @@ template <typename T> Vec<T> &Vec<T>::operator/=(const T &c) {
 
 template <typename T> Vec<T> Vec<T>::operator+(const Vec<T> &m) const {
   if (_n != m._n)
-    throw("cannot compose vectors of different dimension");
+    throw Exception("cannot compose vectors of different dimension");
   Vec<T> v(_n);
   for (u32 i = 0; i < _n; i++)
     v._data[i] = _data[i] + m._data[i];
@@ -79,7 +80,7 @@ template <typename T> Vec<T> Vec<T>::operator+(const Vec<T> &m) const {
 
 template <typename T> Vec<T> &Vec<T>::operator+=(const Vec<T> &m) {
   if (_n != m._n)
-    throw("cannot compose vectors of different dimension");
+    throw Exception("cannot compose vectors of different dimension");
   for (u32 i = 0; i < _n; i++)
     _data[i] += m._data[i];
   return *this;
@@ -87,7 +88,7 @@ template <typename T> Vec<T> &Vec<T>::operator+=(const Vec<T> &m) {
 
 template <typename T> Vec<T> Vec<T>::operator-(const Vec<T> &m) const {
   if (_n != m._n)
-    throw("cannot compose vectors of different dimension");
+    throw Exception("cannot compose vectors of different dimension");
   Vec<T> v(_n);
   for (u32 i = 0; i < _n; i++)
     v._data[i] = _data[i] - m._data[i];
@@ -96,7 +97,7 @@ template <typename T> Vec<T> Vec<T>::operator-(const Vec<T> &m) const {
 
 template <typename T> Vec<T> &Vec<T>::operator-=(const Vec<T> &m) {
   if (_n != m._n)
-    throw("cannot compose vectors of different dimension");
+    throw Exception("cannot compose vectors of different dimension");
   for (u32 i = 0; i < _n; i++)
     _data[i] -= m._data[i];
   return *this;
@@ -104,7 +105,7 @@ template <typename T> Vec<T> &Vec<T>::operator-=(const Vec<T> &m) {
 
 template <typename T> Vec<T> Vec<T>::operator*(const Vec<T> &m) const {
   if (_n != m._n)
-    throw("cannot compose vectors of different dimension");
+    throw Exception("cannot compose vectors of different dimension");
   Vec<T> v(_n);
   for (u32 i = 0; i < _n; i++)
     v._data[i] = _data[i] * m._data[i];
@@ -113,7 +114,7 @@ template <typename T> Vec<T> Vec<T>::operator*(const Vec<T> &m) const {
 
 template <typename T> Vec<T> &Vec<T>::operator*=(const Vec<T> &m) {
   if (_n != m._n)
-    throw("cannot compose vectors of different dimension");
+    throw Exception("cannot compose vectors of different dimension");
   for (u32 i = 0; i < _n; i++)
     _data[i] *= m._data[i];
   return *this;
@@ -121,7 +122,7 @@ template <typename T> Vec<T> &Vec<T>::operator*=(const Vec<T> &m) {
 
 template <typename T> Vec<T> Vec<T>::operator/(const Vec<T> &m) const {
   if (_n != m._n)
-    throw("cannot compose vectors of different dimension");
+    throw Exception("cannot compose vectors of different dimension");
   Vec<T> v(_n);
   for (u32 i = 0; i < _n; i++)
     v._data[i] = _data[i] / m._data[i];
@@ -130,7 +131,7 @@ template <typename T> Vec<T> Vec<T>::operator/(const Vec<T> &m) const {
 
 template <typename T> Vec<T> &Vec<T>::operator/=(const Vec<T> &m) {
   if (_n != m._n)
-    throw("cannot compose vectors of different dimension");
+    throw Exception("cannot compose vectors of different dimension");
   for (u32 i = 0; i < _n; i++)
     _data[i] /= m._data[i];
   return *this;

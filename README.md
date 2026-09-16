@@ -1,5 +1,7 @@
 To be implemented:
   Set, Map, HashMap, Trie, Sparse Matrix, N-dimensional Array, Undirected Graph, Directed Acyclic Graph  
+  Add iterators to all 
+  Add rule of 5 to all
 
 Rule-of-five-default:
     If you define, =default or =delete any of dtor, copy ctor, assignment op, move ctor, move assignment op then you must define, =default or =delete them all.
