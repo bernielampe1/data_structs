@@ -1,18 +1,24 @@
 This is a pedagogical set of data structs, and some algorithms in C++. We concentrated on the rule-of-five implementations. The rule-of-zero is a better way to do this so you don't have to re-accomplish work and inevitably introduce bugs. These are used for learning and teaching.
 
 Rule-of-five-default:
+---------------------
     If you define, =default or =delete any of dtor, copy ctor, assignment op, move ctor, move assignment op then you must define, =default or =delete them all.
 
 Rule-of-zero:
+---------------------
     Use value semantics of stl and smart pointers to ensure you don't have to define any of the copy ctor, move ctor, assignment op, move assignment op, or dtor.
 
 Rule-of-five:
+---------------------
     If you define any of the copy ctor, move ctor, assignment op, move assignment op, or dtor, you must to all five.
 
 Rule-of-three:
+---------------------
     If you define any of the copy ctor, assignment op, or dtor, you must to all three.
 
+
 Containers (all rule-of-five, each with a test in tests/):
+----------------------------------------------------------
 
   Header                 Contents
   ---------------------  --------------------------------------------------------
@@ -43,6 +49,15 @@ Containers (all rule-of-five, each with a test in tests/):
                          cycle detect, bipartite, Dijkstra shortestPaths
   DAG.h                  Directed acyclic graph with enforced acyclicity; topological
                          order, reachability, transitive closure, weighted longest path
+  DirectedGraph.h        General digraph (cycles allowed); hasCycle (3-color DFS),
+                         Tarjan strongly connected components, topological order
+                         (throws when cyclic), transitive closure
+  UndirectedGraph +/-    kruskalMST / primMST / primForestMST (MST.h): minimum
+  MST.h                  spanning tree by union-find growth or seeded growth
+  Deque.h                Double-ended queue over a circular buffer; O(1) amortized
+                         both ends; the Stack/Queue generalization
+  PriorityQueue.h        Priority-queue ADT over BinHeap: push/popTop/changePriority
+
 
 Algorithms (each cross-checked against std::sort / reference models):
 

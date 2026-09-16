@@ -3,6 +3,7 @@
 #include <ostream>
 #include <utility>
 
+#include "Exception.h"
 #include "types.h"
 #include "utils.h"
 
@@ -163,6 +164,27 @@ public:
   bool empty() const { return (_last == 0); }
 
   void clear() { _last = 0; } // forget all elements (slots stay allocated)
+
+  // Direct slot access (unchecked): slot i's stored element. Used for
+  // the priority-queue wrapper's changePriority flow.
+  T &operator[](u64 i) { return _data[i]; }             // unchecked
+
+  const T &operator[](u64 i) const { return _data[i]; } // unchecked read
+
+  // Restores the heap property after slot i's element changed value
+  // externally: sifts UP when the new value beats the parent, else
+  // DOWN. O(log n); the priority-queue changed() hook.
+  void changedAt(u64 i) {
+    if (i >= _last)
+      throw Exception("BinHeap::changedAt: slot outside the heap");
+
+    if (i > 0 && _data[i] CMPDIR _data[parent(i)]) {
+      siftUp(i);
+    } else {
+      // sifting down is a no-op when neither child beats it
+      siftDown(i);
+    }
+  }
 
   // Stores elem, restoring the heap property. False when full.
   bool insert(const T &elem) {

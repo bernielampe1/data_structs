@@ -312,6 +312,49 @@ int main() {
     CHECK(h.size() == 4); // printing did not consume anything
   }
 
+  // changedAt() and operator[]: the priority-change flow.
+  {
+    BinHeap<obj> h(10);
+    for (int i = 0; i < 5; i++)
+      h.insert(obj(i));
+    CHECK(h[0]._n == 4); // slot 0 is the root (max)
+
+    h[2] = obj(50); // slot 2 now beats the root: push it up
+    h.changedAt(2);
+    CHECK(h.peekroot()._n == 50);
+    bool desc = true;
+    int p = 1 << 30;
+    unsigned cnt = 0;
+    while (!h.empty()) {
+      obj v = h.extractroot();
+      if (v._n > p)
+        desc = false;
+      p = v._n;
+      cnt++;
+    }
+    CHECK(desc && cnt == 5); // changedAt restored the ordering
+
+    // demotion: root drops below its children. Pre-change slot layout
+    // (probe): [40, 30, 10, 0, 20]; after demoting slot 0 to -1 the
+    // pops run 30, 20, 10, 0, -1 in descending order.
+    BinHeap<obj> h2(10);
+    for (int i = 0; i < 5; i++)
+      h2.insert(obj(i * 10));
+    h2[0] = obj(-1);
+    h2.changedAt(0);
+    CHECK(h2.peekroot()._n == 30); // the child took over
+    CHECK(h2.extractroot()._n == 30);
+    CHECK(h2.extractroot()._n == 20);
+    CHECK(h2.extractroot()._n == 10);
+    CHECK(h2.extractroot()._n == 0);
+    CHECK(h2.extractroot()._n == -1); // the demoted element pops last
+
+    // out-of-range changedAt throws
+    bool threw = false;
+    try { h2.changedAt(99); } catch (Exception &) { threw = true; }
+    CHECK(threw);
+  }
+
   if (failures == 0) {
     cout << "all checks passed" << endl;
     return 0;
