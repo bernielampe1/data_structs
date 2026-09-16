@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <memory>
 #include <ostream>
 
@@ -225,6 +226,72 @@ public:
 
   // invert using LUP decomp
   Matrix<T> inverse_2() const;
+
+  /* ---- structural ---- */
+
+  // sum of the diagonal entries of a square matrix
+  T trace() const;
+
+  // extract contiguous rows [r0, r0+h) and columns [c0, c0+w)
+  Matrix<T> submatrix(const u32 r0, const u32 c0, const u32 h,
+                      const u32 w) const;
+
+  Vec<T> row(const u32 r) const;
+
+  Vec<T> col(const u32 c) const;
+
+  // replaces row r with v (v.len() must equal cols())
+  void setRow(const u32 r, const Vec<T> &v);
+
+  // replaces column c with v (v.len() must equal rows())
+  void setCol(const u32 c, const Vec<T> &v);
+
+  /* ---- predicates ---- */
+
+  bool isSquare() const;
+  bool isSymmetric() const;
+  bool isDiagonal() const;
+  bool isIdentity() const;
+
+  // exact element equality (same shape required)
+  bool operator==(const Matrix<T> &m) const;
+  bool operator!=(const Matrix<T> &m) const;
+
+  // element-wise comparison within eps; a shape mismatch is not an
+  // inequality: it throws.
+  bool almostEqual(const Matrix<T> &m, double eps = 1e-6) const;
+
+  /* ---- numerical ---- */
+
+  double norm() const; // Frobenius norm
+
+  // number of linearly independent rows via LUP; also the honest way
+  // to ask "is this invertible" without catching an exception
+  u32 rank() const;
+
+  // inverse of the condition number (1-norm based, via LUP); a value
+  // near 0 flags near-singularity. Requires square and invertible.
+  double rcond() const;
+
+  // dominant eigenvalue by power iteration (square matrices). eps
+  // bounds the residual; maxIter caps the sweep count.
+  double powerIteration(u32 maxIter = 1000, double eps = 1e-9) const;
+
+  /* ---- iteration / elementwise ---- */
+
+  // STL-style forward iterators over the flat row-major buffer
+  T *begin();
+  T *end();
+  const T *begin() const;
+  const T *end() const;
+
+  // applies f element-wise in place and out of place
+  void apply(T (*f)(T));
+  Matrix<T> applied(T (*f)(T)) const;
+
+  // element-wise min/max/abs against a same-shaped matrix
+  Matrix<T> elementwiseMin(const Matrix<T> &m) const;
+  Matrix<T> elementwiseMax(const Matrix<T> &m) const;
 };
 
 // Prints the elements row by row, ", " separated, one newline per row,

@@ -180,6 +180,318 @@ template <typename T> Vec<T> Matrix<T>::diag() const {
   return v;
 }
 
+/* ---- structural ---- */
+
+template <typename T> T Matrix<T>::trace() const {
+  if (_rows != _cols)
+    throw Exception("trace of non-square matrix");
+
+  T s = T(0);
+  for (u32 i = 0; i < _cols; i++)
+    s += _data[i * _cols + i];
+  return s;
+}
+
+template <typename T>
+Matrix<T> Matrix<T>::submatrix(const u32 r0, const u32 c0, const u32 h,
+                               const u32 w) const {
+  if (h == 0 || w == 0 || r0 + h > _rows || c0 + w > _cols)
+    throw Exception("submatrix outside the matrix");
+
+  Matrix<T> temp(h, w);
+  for (u32 r = 0; r < h; r++)
+    for (u32 c = 0; c < w; c++)
+      temp._data[r * w + c] = _data[(r0 + r) * _cols + (c0 + c)];
+  return temp;
+}
+
+template <typename T> Vec<T> Matrix<T>::row(const u32 r) const {
+  if (r >= _rows)
+    throw Exception("row index outside the matrix");
+
+  Vec<T> v(_cols);
+  for (u32 c = 0; c < _cols; c++)
+    v[c] = _data[r * _cols + c];
+  return v;
+}
+
+template <typename T> Vec<T> Matrix<T>::col(const u32 c) const {
+  if (c >= _cols)
+    throw Exception("column index outside the matrix");
+
+  Vec<T> v(_rows);
+  for (u32 r = 0; r < _rows; r++)
+    v[r] = _data[r * _cols + c];
+  return v;
+}
+
+template <typename T> void Matrix<T>::setRow(const u32 r, const Vec<T> &v) {
+  if (r >= _rows)
+    throw Exception("row index outside the matrix");
+  if (v.len() != _cols)
+    throw Exception("setRow vector length mismatch");
+
+  for (u32 c = 0; c < _cols; c++)
+    _data[r * _cols + c] = v[c];
+}
+
+template <typename T> void Matrix<T>::setCol(const u32 c, const Vec<T> &v) {
+  if (c >= _cols)
+    throw Exception("column index outside the matrix");
+  if (v.len() != _rows)
+    throw Exception("setCol vector length mismatch");
+
+  for (u32 r = 0; r < _rows; r++)
+    _data[r * _cols + c] = v[r];
+}
+
+/* ---- predicates ---- */
+
+template <typename T> bool Matrix<T>::isSquare() const {
+  return _rows == _cols;
+}
+
+template <typename T> bool Matrix<T>::isSymmetric() const {
+  return isSquare() && *this == this->transpose();
+}
+
+template <typename T> bool Matrix<T>::isDiagonal() const {
+  if (!isSquare())
+    return false;
+
+  for (u32 r = 0; r < _rows; r++)
+    for (u32 c = 0; c < _cols; c++)
+      if (r != c && _data[r * _cols + c] != T(0))
+        return false;
+  return true;
+}
+
+template <typename T> bool Matrix<T>::isIdentity() const {
+  return isSquare() && *this == eye(_rows);
+}
+
+// Exact element equality. Uses memcmp, which is only valid for plain
+// value-semantic element types (arrays of doubles, ints, floats) --
+// exactly what Matrix<T> is for. T with padding or exotic comparisons
+// must overload this.
+template <typename T> bool Matrix<T>::operator==(const Matrix<T> &m) const {
+  return _rows == m._rows && _cols == m._cols &&
+         memcmp(_data, m._data, _rows * _cols * sizeof(T)) == 0;
+}
+
+template <typename T> bool Matrix<T>::operator!=(const Matrix<T> &m) const {
+  return !(*this == m);
+}
+
+template <typename T>
+bool Matrix<T>::almostEqual(const Matrix<T> &m, double eps) const {
+  if (m._rows != _rows || m._cols != _cols)
+    throw Exception("almostEqual requires equal shapes");
+
+  for (u32 i = 0; i < _rows * _cols; i++)
+    if (double(_data[i] > m._data[i] ? _data[i] - m._data[i]
+                                     : m._data[i] - _data[i]) > eps)
+      return false;
+  return true;
+}
+
+/* ---- numerical ---- */
+
+// The Frobenius norm: sqrt of the sum of squared entries, accumulated
+// in double.
+template <typename T> double Matrix<T>::norm() const {
+  double s = 0;
+  for (u32 i = 0; i < _rows * _cols; i++)
+    s += double(_data[i]) * double(_data[i]);
+  return sqrt(s);
+}
+
+// Rank via LUP: the count of pivots that survived the degeneracy
+// threshold. Rank-deficient matrices do NOT throw -- the pivots below
+// tol are simply not counted.
+template <typename T> u32 Matrix<T>::rank() const {
+  if (_rows == 0 || _cols == 0)
+    return 0;
+
+  // Gaussian elimination on a double working copy so the tolerance
+  // logic never runs in low-precision element arithmetic.
+  double work[256]; // supports up to 16x16; larger matrices throw
+  if (_rows * _cols > 256)
+    throw Exception("rank: matrix larger than 16x16 not supported");
+
+  for (u32 i = 0; i < _rows * _cols; i++)
+    work[i] = double(_data[i]);
+
+  u32 r = 0; // filled pivot rows
+  for (u32 c = 0; c < _cols && r < _rows; c++) {
+    // pivot search
+    u32 p = r;
+    for (u32 i = r + 1; i < _rows; i++)
+      if (ABS(work[i * _cols + c]) > ABS(work[p * _cols + c]))
+        p = i;
+
+    if (ABS(work[p * _cols + c]) < tol)
+      continue; // column exhausted
+
+    // swap rows r and p
+    if (p != r)
+      for (u32 j = 0; j < _cols; j++) {
+        double t = work[r * _cols + j];
+        work[r * _cols + j] = work[p * _cols + j];
+        work[p * _cols + j] = t;
+      }
+
+    // eliminate below
+    for (u32 i = r + 1; i < _rows; i++) {
+      double f = work[i * _cols + c] / work[r * _cols + c];
+      for (u32 j = c; j < _cols; j++)
+        work[i * _cols + j] -= f * work[r * _cols + j];
+    }
+    r++;
+  }
+
+  return r;
+}
+
+// Estimate of 1/cond(A) in the infinity norm: ||A||inf * ||A^-1||inf is
+// the condition number; this computes its reciprocal so that a value
+// near 0 flags near-singularity (the convention of LAPACK's rcond).
+// Requires a square, invertible matrix.
+template <typename T> double Matrix<T>::rcond() const {
+  if (_rows != _cols)
+    throw Exception("rcond of non-square matrix");
+
+  // infinity norm of A: max absolute row sum
+  double normA = 0;
+  for (u32 r = 0; r < _rows; r++) {
+    double s = 0;
+    for (u32 c = 0; c < _cols; c++)
+      s += ABS(double(_data[r * _cols + c]));
+    if (s > normA)
+      normA = s;
+  }
+
+  // infinity norm of A^-1 via the LUP-based inverse
+  Matrix<T> inv = inverse_2();
+  double normInv = 0;
+  for (u32 r = 0; r < _rows; r++) {
+    double s = 0;
+    for (u32 c = 0; c < _cols; c++)
+      s += ABS(double(inv._data[r * _cols + c]));
+    if (s > normInv)
+      normInv = s;
+  }
+
+  if (normInv < tol)
+    throw Exception("rcond: inverse unavailable");
+
+  return 1.0 / (normA * normInv);
+}
+
+// The dominant eigenvalue (largest magnitude) by power iteration.
+// Decomposes the matrix as A^(k+1) x = A^(k) x with a random-ish start;
+// the Rayleigh quotient xAx/xx is invariant under the sign flips that
+// plague naive power iteration for negative eigenvalues. eps bounds
+// the change in the estimate; maxIter caps the sweep count.
+template <typename T>
+double Matrix<T>::powerIteration(u32 maxIter, double eps) const {
+  if (_rows != _cols)
+    throw Exception("power iteration on non-square matrix");
+
+  const u32 n = _rows;
+
+  // start vector: all ones (a common choice; for matrices with the
+  // dominant eigenvector orthogonal to it the iteration still leaves
+  // the subspace via floating point noise).
+  Vec<double> x(n);
+  for (u32 i = 0; i < n; i++)
+    x[i] = 1.0;
+
+  // y = A x, then x <- y/||y||. With x kept unit length the Rayleigh
+  // quotient is simply y . x; it is invariant under x -> -x (A x
+  // flips with x), so it converges to the SIGNED dominant eigenvalue
+  // even when that eigenvalue is negative.
+  double lambda = 0;
+  for (u32 it = 0; it < maxIter; it++) {
+    Vec<double> y(n);
+    for (u32 r = 0; r < n; r++) {
+      double s = 0;
+      for (u32 c = 0; c < n; c++)
+        s += double(_data[r * _cols + c]) * x[c];
+      y[r] = s;
+    }
+
+    double ny = 0;
+    for (u32 i = 0; i < n; i++)
+      ny += y[i] * y[i];
+    ny = sqrt(ny);
+    if (ny < 1e-300)
+      return 0; // x collapsed: eigenvalue is 0
+
+    double newLambda = 0;
+    for (u32 i = 0; i < n; i++)
+      newLambda += y[i] * x[i]; // Rayleigh quotient, signed
+
+    for (u32 i = 0; i < n; i++)
+      x[i] = y[i] / ny;
+
+    if (ABS(newLambda - lambda) < eps) { // |Δλ| small: converged
+      lambda = newLambda;
+      break;
+    }
+    lambda = newLambda;
+  }
+
+  return lambda;
+}
+
+/* ---- iteration / elementwise ---- */
+
+// STL-style iterators over the flat row-major buffer.
+template <typename T> T *Matrix<T>::begin() { return _data; }
+
+template <typename T> T *Matrix<T>::end() { return _data + _rows * _cols; }
+
+template <typename T> const T *Matrix<T>::begin() const { return _data; }
+
+template <typename T> const T *Matrix<T>::end() const {
+  return _data + _rows * _cols;
+}
+
+template <typename T> void Matrix<T>::apply(T (*f)(T)) {
+  for (u32 i = 0; i < _rows * _cols; i++)
+    _data[i] = f(_data[i]);
+}
+
+template <typename T> Matrix<T> Matrix<T>::applied(T (*f)(T)) const {
+  Matrix<T> temp(_rows, _cols);
+  for (u32 i = 0; i < _rows * _cols; i++)
+    temp._data[i] = f(_data[i]);
+  return temp;
+}
+
+template <typename T>
+Matrix<T> Matrix<T>::elementwiseMin(const Matrix<T> &m) const {
+  if (m._rows != _rows || m._cols != _cols)
+    throw Exception("elementwiseMin requires equal shapes");
+
+  Matrix<T> temp(_rows, _cols);
+  for (u32 i = 0; i < _rows * _cols; i++)
+    temp._data[i] = _data[i] < m._data[i] ? _data[i] : m._data[i];
+  return temp;
+}
+
+template <typename T>
+Matrix<T> Matrix<T>::elementwiseMax(const Matrix<T> &m) const {
+  if (m._rows != _rows || m._cols != _cols)
+    throw Exception("elementwiseMax requires equal shapes");
+
+  Matrix<T> temp(_rows, _cols);
+  for (u32 i = 0; i < _rows * _cols; i++)
+    temp._data[i] = _data[i] < m._data[i] ? m._data[i] : _data[i];
+  return temp;
+}
+
 // The (rp, cp) cofactor: *this with row rp and column cp removed.
 template <typename T>
 Matrix<T> Matrix<T>::cofactor(const u32 &rp, const u32 &cp) const {

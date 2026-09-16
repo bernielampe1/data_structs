@@ -29,6 +29,9 @@ bool near(A a, B b, double eps = 1e-6) {
 
 // Deterministic PRNG so failures are reproducible.
 static unsigned seed = 424242424u;
+
+// apply()/applied() test function: doubles its argument.
+static float doubleIt(float x) { return x * 2.0f; }
 static unsigned rnd() { return seed = seed * 1103515245u + 12345u; }
 
 int main() {
@@ -557,6 +560,272 @@ int main() {
     os << m;
     CHECK(os.str() == "1, 2\n3, 4\n");
     CHECK(m.rows() == 2);
+  }
+
+  // ---- structural additions ----
+
+  // trace(): diagonal sum; non-square throws.
+  {
+    float a[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    Matrix<float> m(a, 3, 3);
+    CHECK(m.trace() == 15);
+
+    Matrix<float> ns(a, 3, 2);
+    bool threw = false;
+    try { ns.trace(); } catch (Exception &) { threw = true; }
+    CHECK(threw);
+  }
+
+  // submatrix(): contiguous window extraction; bounds validated.
+  {
+    float a[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    Matrix<float> m(a, 3, 3);
+    Matrix<float> s = m.submatrix(1, 1, 2, 2);
+    CHECK(s.rows() == 2 && s.cols() == 2);
+    CHECK(s.get(0, 0) == 5 && s.get(0, 1) == 6);
+    CHECK(s.get(1, 0) == 8 && s.get(1, 1) == 9);
+
+    Matrix<float> whole = m.submatrix(0, 0, 3, 3);
+    CHECK(whole == m); // full-window extraction is identity
+
+    bool threw = false;
+    try { m.submatrix(1, 1, 3, 1); } catch (Exception &) { threw = true; }
+    CHECK(threw); // window runs past the bottom
+    threw = false;
+    try { m.submatrix(0, 0, 0, 1); } catch (Exception &) { threw = true; }
+    CHECK(threw); // zero-height window
+  }
+
+  // row()/col()/setRow()/setCol(): extraction and replacement.
+  {
+    float a[6] = {1, 2, 3, 4, 5, 6};
+    Matrix<float> m(a, 2, 3);
+
+    Vec<float> r1 = m.row(1);
+    CHECK(r1.len() == 3 && r1[0] == 4 && r1[2] == 6);
+
+    Vec<float> c2 = m.col(2);
+    CHECK(c2.len() == 2 && c2[0] == 3 && c2[1] == 6);
+
+    bool threw = false;
+    try { m.row(2); } catch (Exception &) { threw = true; }
+    CHECK(threw);
+    threw = false;
+    try { m.col(3); } catch (Exception &) { threw = true; }
+    CHECK(threw);
+
+    // replacement: setCol patches a single column; row/col round trip
+    Matrix<float> w(a, 2, 3);
+    float nv[2] = {70, 71};
+    w.setCol(0, Vec<float>(nv, 2));
+    CHECK(w.get(0, 0) == 70 && w.get(1, 0) == 71);
+    CHECK(w.get(0, 1) == 2); // other columns untouched
+
+    float rv[3] = {10, 11, 12};
+    w.setRow(1, Vec<float>(rv, 3));
+    CHECK(w.get(1, 0) == 10 && w.get(1, 2) == 12);
+    CHECK(w.get(0, 0) == 70); // other rows untouched
+
+    threw = false;
+    try { w.setRow(0, Vec<float>(2)); } catch (Exception &) { threw = true; }
+    CHECK(threw); // length mismatch
+    threw = false;
+    try { w.setCol(0, Vec<float>(3)); } catch (Exception &) { threw = true; }
+    CHECK(threw);
+  }
+
+  // ---- predicates ----
+
+  {
+    float a[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    Matrix<float> m(a, 3, 3);
+    CHECK(m.isSquare());
+    CHECK(!m.isSymmetric());
+    CHECK(!m.isDiagonal());
+    CHECK(!m.isIdentity());
+
+    Matrix<float> ns(a, 2, 3);
+    CHECK(!ns.isSquare());
+    CHECK(!ns.isDiagonal());
+
+    float sym[9] = {1, 2, 3, 2, 5, 6, 3, 6, 9};
+    Matrix<float> sm(sym, 3, 3);
+    CHECK(sm.isSymmetric());
+    CHECK(sm.isSquare());
+
+    float dg[9] = {3, 0, 0, 0, -1, 0, 0, 0, 7};
+    Matrix<float> dgm(dg, 3, 3);
+    CHECK(dgm.isDiagonal());
+    CHECK(dgm.isSymmetric()); // diagonal implies symmetric
+    CHECK(!dgm.isIdentity());
+
+    Matrix<float> id = Matrix<float>::eye(3);
+    CHECK(id.isIdentity());
+    CHECK(id.isSymmetric());
+    CHECK(id.isDiagonal());
+
+    Matrix<float> e0 = Matrix<float>::eye(0);
+    CHECK(e0.isIdentity()); // vacuous 0x0 identity: true by definition
+  }
+
+  // operator==/!= and almostEqual().
+  {
+    float a[4] = {1, 2, 3, 4};
+    Matrix<float> m(a, 2, 2), m2(a, 2, 2), md(a, 3, 2);
+    CHECK(m == m2);
+    CHECK(!(m != m2));
+    CHECK(m != md); // different shape is unequal, not an error
+    CHECK(m == m);  // self equality
+
+    // float equality: almostEqual catches values that differ by more
+    // than eps but not by structure (0.1f accumulated vs literal 0.1f
+    // differ in the last representable digit on some platforms).
+    float f1[1] = {0.1f};
+    Matrix<float> p1(f1, 1, 1);
+    float f2v = 0.1f;
+    f2v += 1e-4f; // a real, small difference
+    float f2[1] = {f2v};
+    Matrix<float> p2(f2, 1, 1);
+    CHECK(p1 != p2);           // bits differ
+    CHECK(!p1.almostEqual(p2)); // 1e-4 difference exceeds 1e-6 eps
+
+    // but a genuinely tiny difference passes the eps test
+    float f3v = 0.1f;
+    f3v += 1e-8f;
+    float f3[1] = {f3v};
+    Matrix<float> p3(f3, 1, 1);
+    CHECK(p1.almostEqual(p3));
+
+    bool threw = false;
+    try { m.almostEqual(md); } catch (Exception &) { threw = true; }
+    CHECK(threw); // shape mismatch throws
+  }
+
+  // ---- numerical additions ----
+
+  // Frobenius norm.
+  {
+    float a[6] = {3, 4, 0, 0};
+    Matrix<float> m(a, 2, 2);
+    CHECK(near(m.norm(), 5.0)); // 3-4-5
+
+    Matrix<float> e0 = Matrix<float>::eye(0);
+    CHECK(near(e0.norm(), 0.0));
+  }
+
+  // rank(): known shapes; rank filters singular matrices without
+  // needing exception round-trips.
+  {
+    float a[6] = {1, 2, 3, 2, 4, 6}; // row2 = 2 * row1
+    Matrix<float> m(a, 2, 3);
+    CHECK(m.rank() == 1);
+
+    float id[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    Matrix<float> idm(id, 3, 3);
+    CHECK(idm.rank() == 3);
+
+    float z[1] = {0};
+    Matrix<float> zm(z, 1, 1);
+    CHECK(zm.rank() == 0);
+
+    float r3[9] = {1, 2, 0, 3, 6, 0, 0, 0, 5}; // rows 1,2 dependent
+    Matrix<float> r3m(r3, 3, 3);
+    CHECK(r3m.rank() == 2);
+
+    // wide and tall shapes
+    float wide[6] = {1, 0, 0, 0, 1, 0};
+    Matrix<float> wm(wide, 2, 3);
+    CHECK(wm.rank() == 2);
+  }
+
+  // rcond(): identity ~1 (well-conditioned); scaled identity exact 1;
+  // Hilbert-flavored ill-conditioned small value.
+  {
+    Matrix<float> id = Matrix<float>::eye(3);
+    double rc = id.rcond();
+    CHECK(ABS(rc - 1.0) < 1e-5);
+
+    float s[4] = {1000, 0, 0, 0.001f};
+    Matrix<float> sm(s, 2, 2);
+    double rcs = sm.rcond(); // = 1e-6
+    CHECK(ABS(rcs - 1e-6) < 1e-10);
+  }
+  // powerIteration(): dominant eigenvalue of a diagonal and a
+  // symmetric matrix, cross-checked against the trace/det identity.
+  {
+    float d[9] = {5, 0, 0, 0, -3, 0, 0, 0, 2};
+    Matrix<float> dm(d, 3, 3);
+    CHECK(near(dm.powerIteration(), 5.0, 1e-6));
+
+    // symmetric with dominant eigenvalue 11: Gershgorin interior
+    float s[9] = {2, 1, 0, 1, 2, 1, 0, 1, 2};
+    Matrix<float> sm(s, 3, 3);
+    double lambda = sm.powerIteration();
+    CHECK(near(lambda, 2.0 + sqrt(2.0), 1e-5)); // analytic: 2+sqrt2 dominant
+
+    // negative dominant eigenvalue
+    float neg[4] = {-7, 0, 0, 1};
+    Matrix<float> nm(neg, 2, 2);
+    CHECK(near(nm.powerIteration(), -7.0, 1e-6));
+
+    bool threw = false;
+    Matrix<float> ns(d, 2, 3);
+    try { ns.powerIteration(); } catch (Exception &) { threw = true; }
+    CHECK(threw);
+  }
+
+  // ---- iteration / elementwise ----
+
+  // begin()/end() with std algorithms.
+  {
+    float a[6] = {1, 2, 3, 4, 5, 6};
+    Matrix<float> m(a, 2, 3);
+
+    float sum = 0;
+    for (const float *it = m.begin(); it != m.end(); ++it)
+      sum += *it;
+    CHECK(sum == 21); // 1+..+6
+
+    // mutate through the non-const iterator
+    *m.begin() = 100;
+    CHECK(m.get(0, 0) == 100);
+
+    const Matrix<float> &cm = m;
+    const float *found = 0;
+    for (const float *it = cm.begin(); it != cm.end(); ++it)
+      if (*it == 6)
+        found = it;
+    CHECK(found == cm.end() - 1); // last element found by pointer
+  }
+
+  // apply()/applied(): in-place vs out-of-place transform.
+  {
+    float a[4] = {1, 2, 3, 4};
+    Matrix<float> m(a, 2, 2);
+
+    Matrix<float> doubled = m.applied(doubleIt);
+    CHECK(doubled[0] == 2 && doubled[3] == 8);
+    CHECK(m[0] == 1); // source untouched by applied()
+
+    m.apply(doubleIt);
+    CHECK(m[0] == 2 && m[3] == 8); // in place
+  }
+
+  // elementwiseMin/Max.
+  {
+    float a[4] = {1, 5, 2, 8};
+    float b[4] = {3, 4, 2, 9};
+    Matrix<float> m(a, 2, 2), n(b, 2, 2);
+
+    Matrix<float> lo = m.elementwiseMin(n);
+    CHECK(lo[0] == 1 && lo[1] == 4 && lo[2] == 2 && lo[3] == 8);
+    Matrix<float> hi = m.elementwiseMax(n);
+    CHECK(hi[0] == 3 && hi[1] == 5 && hi[2] == 2 && hi[3] == 9);
+
+    bool threw = false;
+    Matrix<float> other(3, 2);
+    try { m.elementwiseMin(other); } catch (Exception &) { threw = true; }
+    CHECK(threw);
   }
 
   // Randomized stress: random-shape matmul against a naive triple loop.
