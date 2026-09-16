@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ostream>
+#include <type_traits>
 #include <utility>
 
  template <typename T> class Queue;
@@ -147,6 +148,53 @@ public:
   T &back() { return (_back->_data); } // newest (UB if empty)
 
   const T &back() const { return (_back->_data); } // newest (UB if empty)
+
+  // Forward iterator over the node chain: begin() is the FRONT
+  // (oldest) element and the walk follows _next toward the back;
+  // end() is one past the back. Popping invalidates the iterator
+  // naming the popped element only.
+  template <typename U> class Iterator {
+  private:
+    U *_node;
+
+    explicit Iterator(U *node) : _node(node) {}
+
+    friend class Queue<T>;
+
+  public:
+    using value_type = typename std::remove_const<decltype(_node->_data)>::type;
+    using difference_type = std::ptrdiff_t;
+    using pointer = value_type *;
+    using reference = typename std::conditional<
+        std::is_const<typename std::remove_pointer<U>::type>::value,
+        const value_type &, value_type &>::type;
+    using iterator_category = std::forward_iterator_tag;
+
+    bool operator==(const Iterator &o) const { return _node == o._node; }
+    bool operator!=(const Iterator &o) const { return _node != o._node; }
+
+    Iterator &operator++() { // advance toward the back (pre)
+      _node = _node->_next;
+      return *this;
+    }
+    Iterator operator++(int) { // advance (post)
+      Iterator it = *this;
+      _node = _node->_next;
+      return it;
+    }
+
+    reference operator*() const { return _node->_data; }
+    value_type *operator->() const { return &_node->_data; }
+  };
+
+  using iterator = Iterator<Node>;
+  using const_iterator = Iterator<const Node>;
+
+  iterator begin() { return iterator(_front); }         // the front node
+  const_iterator begin() const { return const_iterator(_front); }
+
+  iterator end() { return iterator(0); }                // past the back
+  const_iterator end() const { return const_iterator(0); }
 
   friend std::ostream &operator<<<>(std::ostream &os, const Queue<T> &rhs);
 };

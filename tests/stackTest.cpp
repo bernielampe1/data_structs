@@ -2,6 +2,7 @@
 // first failure. Build and run from tests/:  make stackTest && ./stackTest
 
 #include "Stack.h"
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <utility>
@@ -172,6 +173,45 @@ int main() {
   self = selfAlias;
   CHECK(self.size() == 3);
   CHECK(self.top()._n == 2);
+
+  // Iterators: begin() at the TOP, walk to the bottom; end() sentinel;
+  // range-for and std::find work; mutation through iterator.
+  {
+    Stack<int> s;
+    for (int i = 0; i < 5; i++)
+      s.push(i);
+
+    // top-first order (1st is the newest: 4)
+    int expect[5] = {4, 3, 2, 1, 0};
+    bool ok = true;
+    int k = 0;
+    for (int v : s) {
+      if (v != expect[k])
+        ok = false;
+      k++;
+    }
+    CHECK(ok && k == 5);
+
+    // empty stack: begin == end
+    Stack<int> e;
+    CHECK(e.begin() == e.end());
+
+    // std::find
+    auto found = std::find(s.begin(), s.end(), 3);
+    CHECK(found != s.end());
+    CHECK(std::find(s.begin(), s.end(), 99) == s.end());
+
+    // mutation through the iterator (top element)
+    *s.begin() = 99;
+    CHECK(s.top() == 99);
+
+    // const iteration
+    const Stack<int> &cs = s;
+    int sum = 0;
+    for (int v : cs)
+      sum += v;
+    CHECK(sum == 99 + 3 + 2 + 1 + 0); // {99,3,2,1,0}
+  }
 
   if (failures == 0) {
     cout << "all checks passed" << endl;

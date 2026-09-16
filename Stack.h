@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ostream>
+#include <type_traits>
 #include <utility>
 
 template <typename T> class Stack;
@@ -122,6 +123,53 @@ public:
 
   T &top() { return (_top->_data); }             // top element (UB if empty)
   const T &top() const { return (_top->_data); } // top read (UB if empty)
+
+  // Forward iterator over the node chain: begin() is the TOP element
+  // and the walk follows _prev toward the bottom; end() is one past
+  // the bottom (the null end of the chain). Popping invalidates the
+  // iterator naming the popped element only.
+  template <typename U> class Iterator {
+  private:
+    U *_node; // current node (U is Node or const Node)
+
+    explicit Iterator(U *node) : _node(node) {}
+
+    friend class Stack<T>;
+
+  public:
+    using value_type = typename std::remove_const<decltype(_node->_data)>::type;
+    using difference_type = std::ptrdiff_t;
+    using pointer = value_type *;
+    using reference = typename std::conditional<
+        std::is_const<typename std::remove_pointer<U>::type>::value,
+        const value_type &, value_type &>::type;
+    using iterator_category = std::forward_iterator_tag;
+
+    bool operator==(const Iterator &o) const { return _node == o._node; }
+    bool operator!=(const Iterator &o) const { return _node != o._node; }
+
+    Iterator &operator++() { // advance toward the bottom (pre)
+      _node = _node->_prev;
+      return *this;
+    }
+    Iterator operator++(int) { // advance (post)
+      Iterator it = *this;
+      _node = _node->_prev;
+      return it;
+    }
+
+    reference operator*() const { return _node->_data; }
+    value_type *operator->() const { return &_node->_data; }
+  };
+
+  using iterator = Iterator<Node>;
+  using const_iterator = Iterator<const Node>;
+
+  iterator begin() { return iterator(_top); }             // the top node
+  const_iterator begin() const { return const_iterator(_top); }
+
+  iterator end() { return iterator(0); }                  // past the bottom
+  const_iterator end() const { return const_iterator(0); }
 
   friend std::ostream &operator<<<>(std::ostream &os, const Stack<T> &rhs);
 };

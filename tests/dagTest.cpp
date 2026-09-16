@@ -393,6 +393,59 @@ int main() {
     CHECK(allOk);
   }
 
+  // Weighted longest path (critical path): the classic project-graph use.
+  {
+    DAG<int> g(5);
+    // tasks: 0 -> 1 (3), 0 -> 2 (2), 1 -> 3 (4), 2 -> 3 (1),
+    //        3 -> 4 (7)
+    g.addEdge(0, 1, 3);
+    g.addEdge(0, 2, 2);
+    g.addEdge(1, 3, 4);
+    g.addEdge(2, 3, 1);
+    g.addEdge(3, 4, 7);
+
+    // paths: 0-1-3-4 = 14 (critical), 0-2-3-4 = 10, ends at 4
+    CHECK(g.longestPathWeight() == 14);
+    CHECK(g.longestPathTo(4) == 14);
+    CHECK(g.longestPathTo(3) == 7); // 0-1-3 beats 0-2-3 (3+4=7 vs 2+1=3)
+    CHECK(g.longestPathTo(1) == 3);
+    CHECK(g.longestPathTo(0) == 0); // no predecessor
+
+    // edge-less DAG: all zeros
+    DAG<int> e(4);
+    CHECK(e.longestPathWeight() == 0);
+    CHECK(e.longestPathTo(2) == 0);
+
+    // negative weights: max-sum over 1+ edge paths
+    DAG<int> neg(3);
+    neg.addEdge(0, 1, -2);
+    neg.addEdge(1, 2, -4);
+    neg.addEdge(0, 2, -3);
+    // paths: 0-1 (-2), 0-2 (-3), 0-1-2 (-6): max is -2
+    CHECK(neg.longestPathWeight() == -2);
+    CHECK(neg.longestPathTo(1) == -2);
+    CHECK(neg.longestPathTo(2) == -3);
+  }
+
+  bool threw = false; // single-vertex graph edge cases
+  {
+    DAG<int> one(1);
+    CHECK(one.longestPathWeight() == 0);
+    CHECK(one.longestPathTo(0) == 0);
+
+    DAG<int> g(2);
+    g.addEdge(0, 1, 5);
+    bool unused_threw = false;
+    try {
+      DAG<int> bad(3);
+      bad.longestPathTo(3); // out of range
+    } catch (Exception &) {
+      unused_threw = true;
+    }
+    threw = unused_threw;
+    CHECK(threw);
+  }
+
   if (failures == 0) {
     cout << "all checks passed" << endl;
     return 0;

@@ -4,6 +4,8 @@
 #include <ostream>
 #include <utility>
 
+#include <limits>
+
 #include "BitVector.h"
 #include "Exception.h"
 #include "types.h"
@@ -440,6 +442,88 @@ public:
           out.setBit(u * _V + v);
     }
     return out;
+  }
+
+  // Weight of the longest directed PATH under edge weights (the
+  // critical path when W is a task duration). Relaxing along a
+  // topological order accumulates weight; unreachable vertices
+  // contribute nothing. Requires W addable and <-comparable. A graph
+  // with no edges has longest path weight 0 (single vertex).
+  W longestPathWeight() const {
+    if (_V == 0)
+      return W(0);
+
+    Vec<u32> order = topologicalOrder();
+
+    // best[v]: the heaviest path ENDS at v (>= 1 edge), so it starts at
+    // the smallest representable W for every vertex (all-negative edge
+    // weights must be beatable) and takes 0 only where a sweep never
+    // improved it -- that degenerate case is reported as W(0) when the
+    // graph has no edges at all.
+    const W MINW = std::numeric_limits<W>::lowest();
+    W *best = new W[_V]();
+    std::unique_ptr<W[]> bGuard(best);
+    for (u32 i = 0; i < _V; i++)
+      best[i] = MINW;
+    best[order[0]] = W(0); // the first topological vertex starts at 0
+
+    for (u32 idx = 0; idx < _V; idx++) {
+      u32 u = order[idx];
+      if (best[u] == MINW)
+        continue;
+      for (u64 i = 0; i < _adj[u]._n; i++) {
+        u32 v = _adj[u]._e[i]._v;
+        W through = best[u] + _adj[u]._e[i]._w;
+        if (best[v] < through)
+          best[v] = through;
+      }
+    }
+
+    // The longest PATH has at least one edge, so only vertices an edge
+    // actually reaches are candidates; a graph with no edges reports
+    // the empty path's weight 0.
+    if (_E == 0)
+      return W(0);
+
+    W longest = MINW;
+    for (u32 v = 0; v < _V; v++)
+      if (inDegree(v) > 0 && longest < best[v])
+        longest = best[v];
+
+    return longest;
+  }
+
+  // The weight of a single source-to-sink longest path ending AT v
+  // (all paths are counted; isolated v reports W(0)).
+  W longestPathTo(u32 v) const {
+    validateVertex(v);
+    if (_V == 0)
+      return W(0);
+
+    Vec<u32> order = topologicalOrder();
+
+    const W MINW = std::numeric_limits<W>::lowest();
+    W *best = new W[_V]();
+    std::unique_ptr<W[]> bGuard(best);
+    for (u32 i = 0; i < _V; i++)
+      best[i] = MINW;
+    best[order[0]] = W(0);
+
+    for (u32 idx = 0; idx < _V; idx++) {
+      u32 u = order[idx];
+      if (best[u] == MINW)
+        continue; // u unreachable as a path end: not a source here
+      for (u64 i = 0; i < _adj[u]._n; i++) {
+        u32 w2 = _adj[u]._e[i]._v;
+        W through = best[u] + _adj[u]._e[i]._w;
+        if (best[w2] < through)
+          best[w2] = through;
+      }
+    }
+
+    // v reached by no path (isolated): weight 0 (the empty path to
+    // itself); otherwise the max
+    return best[v] == MINW ? W(0) : best[v];
   }
 
   // True when u has no out-edges (a sink).

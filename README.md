@@ -11,3 +11,49 @@ Rule-of-five:
 
 Rule-of-three:
     If you define any of the copy ctor, assignment op, or dtor, you must to all three.
+
+Containers (all rule-of-five, each with a test in tests/):
+
+  Header                 Contents
+  ---------------------  --------------------------------------------------------
+  Array.h                Fixed-length contiguous array; STL random-access iterators
+  Vec.h                  Growable length with element-wise arithmetic (.inl)
+  Matrix.h / Matrix.inl  Dense 2-D; matmul, LUP decompose, det(2), inverse(2), solve(2)
+  SparseMatrix.h         Sorted (row, col, value) triples; Matrix.h feature parity,
+                         zero-normalizing arithmetic, toDense/fromDense bridges
+  ArrayN.h               N-dimensional dense array over row-major strides
+  BitVector.h            Packed bit sequence with bit tricks (population count)
+  List.h                 Doubly-linked ring around a sentinel; bidirectional iterators
+  Stack.h                LIFO singly-linked chain; forward iterators
+  Queue.h                FIFO doubly-linked chain; forward iterators
+  Pair.h                 Two-element value type
+  Set.h                  Ordered set over a doubling sorted array (binary search)
+  Map.h                  Ordered map from K to V over the same sorted array
+  HashMap.h              std::hash keyed map, open addressing with tombstones
+  HashTable.h            Client-hash keyed map, separate chaining
+  RBTree.h               Red-black tree (std::set contract: insert/erase/exists/find,
+                         checkInvariants() test hook)
+  BinTree.h              Unbalanced BST (insert/exists/find)
+  BinHeap.h              Fixed-capacity binary heap (MAXHEAP by default)
+  SkipList.h             Probabilistic ordered map with tower levels
+  Trie.h                 String-keyed prefix tree; hasPrefix/prefix_each
+  DisjointSet.h          Union-find with rank + path compression
+  Image.h / Image.inl    2-D pixel buffer; PGM/PPM file I/O; convolution
+  UndirectedGraph.h      Weighted undirected simple graph; BFS, DFS, components,
+                         cycle detect, bipartite, Dijkstra shortestPaths
+  DAG.h                  Directed acyclic graph with enforced acyclicity; topological
+                         order, reachability, transitive closure, weighted longest path
+
+Algorithms (each cross-checked against std::sort / reference models):
+
+  qsort.h                Quicksort over Array<T> (l..r range)
+  msort.h                Merge sort over Array<T> (stable)
+
+Build and run every test:
+
+  cd tests && make check
+
+Individual test:  cd tests && make <name>Test && ./<name>Test
+
+Every test prints one line per check ("ok: ..." / "FAIL: ...") and exits
+nonzero on the first failure.

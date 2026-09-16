@@ -2,6 +2,7 @@
 // the first failure. Build and run from tests/:  make queueTest && ./queueTest
 
 #include "Queue.h"
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <utility>
@@ -250,6 +251,35 @@ int main() {
     }
     CHECK(ok);
     CHECK(expect == 1000);
+  }
+
+  // Iterators: begin() at the FRONT (oldest), walk to the back;
+  // end() sentinel; range-for; std::find; mutation through iterator.
+  {
+    Queue<int> q;
+    for (int i = 0; i < 5; i++)
+      q.push(i);
+
+    // front-first order (oldest first: 0)
+    bool ok = true;
+    int k = 0;
+    for (int v : q) {
+      if (v != k)
+        ok = false;
+      k++;
+    }
+    CHECK(ok && k == 5);
+
+    Queue<int> e;
+    CHECK(e.begin() == e.end());
+
+    auto found = std::find(q.begin(), q.end(), 3);
+    CHECK(found != q.end());
+    CHECK(std::find(q.begin(), q.end(), 99) == q.end());
+
+    *q.begin() = 99; // mutate the front
+    CHECK(q.front() == 99);
+    CHECK(q.back() == 4); // the rest untouched
   }
 
   if (failures == 0) {
