@@ -18,7 +18,7 @@ All are rule-of-five, each with a test in `tests/`.
 | Header | Contents |
 |---|---|
 | `Array.h` | Fixed-length contiguous array; STL random-access iterators |
-| `Vec.h` / `Vec.inl` | Growable length with element-wise arithmetic |
+| `Vec.h` / `Vec.inl` | Fixed length with element-wise arithmetic |
 | `Matrix.h` / `Matrix.inl` | Dense 2-D; matmul, LUP decompose, det(2), inverse(2), solve(2) |
 | `SparseMatrix.h` | Sorted (row, col, value) triples; Matrix.h feature parity, zero-normalizing arithmetic, `toDense`/`fromDense` bridges |
 | `ArrayN.h` | N-dimensional dense array over row-major strides |
